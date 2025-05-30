@@ -38,12 +38,6 @@ def chain(mems) :
         maxPrev = getMax(maxChainST, mems_len, 0, index)
         #update arr[index] to maxPrev + 1
         updateValue(arr, maxChainST, 0, mems_len - 1, index, maxPrev + 1, 0)
- 
-    print(arr)
 
+    return arr
 
-#chain([(1,2), (4, 3), (2,10), (5, 4), (3, 6), (6, 7)])
-
-#chain([(1, 1), (2, 2), (3, 5), (4, 3), (5, 4), (6, 6)])
-
-chain([(1, 1), (2, 2), (2, 3), (4, 3), (5, 3), (6, 6), (4, 2), (5, 2)])
