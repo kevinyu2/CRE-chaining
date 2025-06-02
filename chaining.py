@@ -1,4 +1,5 @@
 from segment_tree import *
+
 import numpy as np
 
 # Do argsort but break ties by taking the later one in the array first
@@ -37,5 +38,5 @@ def chain(mems):
         #update arr[index] to maxPrev + 1
         updateValue(arr, maxChainST, 0, mems_len - 1, index, maxPrev + 1, 0)
 
-    return arr
+    return max(arr)
 
