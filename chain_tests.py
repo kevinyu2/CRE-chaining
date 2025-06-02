@@ -3,17 +3,6 @@ import random
 from collections import defaultdict
 import time
 
-def basic_test_1():
-        
-    dp_arr = chain([(1,2), (4, 3), (2,10), (5, 4), (3, 6), (6, 7)])
-    max = max(dp_arr)
-    # assert(max == )
-
-
-    chain([(1, 1), (2, 2), (3, 5), (4, 3), (5, 4), (6, 6)])
-
-    chain([(1, 1), (2, 2), (2, 3), (4, 3), (5, 3), (6, 6), (4, 2), (5, 2)])
-
 def generate_str(length):
     rand_str = ""
     for i in range(length):

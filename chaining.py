@@ -16,11 +16,9 @@ def argsort_reverse_ties(arr) :
 #MEMs should be a list of tuples. Each entry in the list is an MEM. For each MEM, 
 #there is a tuple where the first entry is the index of the match in the first sequence
 #and the second entry is the index of the match in the second sequence (a, c)
-def chain(mems) :
-    #sort mems by second value (but tiebreak by the reversed first value)
-    #this works because the sort is stable
-    mems.sort(reverse = True)
-    mems.sort(key=lambda x: x[1])
+def chain(mems):
+    #sort mems by second value (but tiebreak by the first value, descending)
+    mems.sort(key=lambda x: (x[1], -x[0]))
     mems_len = len(mems)
     
     #get list of first values (a)
