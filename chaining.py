@@ -1,4 +1,5 @@
-from segment_tree import *
+# from segment_tree import *
+import bisect
 
 import numpy as np
 
@@ -18,9 +19,12 @@ def argsort_reverse_ties(arr) :
 #there is a tuple where the first entry is the index of the match in the first sequence
 #and the second entry is the index of the match in the second sequence (a, c)
 def chain(mems):
+    mems_len = len(mems)
+    if mems_len == 0 :
+        return 0
+    
     #sort mems by second value (but tiebreak by the first value, descending)
     mems.sort(key=lambda x: (x[1], -x[0]))
-    mems_len = len(mems)
     
     #get list of first values (a)
     mems_a = [element[0] for element in mems]
@@ -28,15 +32,17 @@ def chain(mems):
     # Order in terms of a
     order = argsort_reverse_ties(mems_a)
 
-    # Array for the segment tree
-    arr = [0]*mems_len
-    maxChainST = constructST(arr, mems_len)
+    return lengthOfLIS(order)
 
-    for index in order :
-        # Get the max length chain up to the current c
-        maxPrev = getMax(maxChainST, mems_len, 0, index)
-        #update arr[index] to maxPrev + 1
-        updateValue(arr, maxChainST, 0, mems_len - 1, index, maxPrev + 1, 0)
+# From a leetcode submission
+def lengthOfLIS(nums) :
 
-    return max(arr)
+    sub = []
+    for x in nums:
+        if len(sub) == 0 or sub[-1] < x:
+            sub.append(x)
+        else:
+            idx = bisect.bisect_left(sub, x)  # Find the index of the first element >= x
+            sub[idx] = x  # Replace that number with x
 
+    return len(sub)
