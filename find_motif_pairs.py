@@ -9,7 +9,6 @@ import sys
 # Dict is structured as: tomtom_motif : {acr_motif_1, acr_motif_2}
 # Pairing is structured as a set of {(motif1, motif2)}, where each tuple is in sorted order
 def create_motif_pairing() :
-    print()
     print("######################", file=sys.stderr)
     print("Finding Motif Matches in Tomtom", file=sys.stderr)
 
@@ -50,15 +49,27 @@ def create_motif_pairing() :
 def align(motif_pairs):
     print("Aligning All Matches", file=sys.stderr)
 
+    print("sequence_1\tsequence_2\tsequence_1_start\tsequence_2_start\tscore")
     aligner = Align.PairwiseAligner(scoring="blastn", mode="local")
 
     for pair in motif_pairs :
-        score = aligner.score(pair[0], pair[1])
+        alignments = aligner.align(pair[0], pair[1])
+        best = alignments[0]
+
+        seq1_aligned, seq2_aligned = best.aligned
+
+        seq1_start = seq1_aligned[0][0]
+        seq2_start = seq2_aligned[0][0]
+
+
+        score = best.score
         score /= min(len(pair[0]), len(pair[1]))
-        print(f"{pair[0]}\t{pair[1]}\t{score}")
+        print(f"{pair[0]}\t{pair[1]}\t{seq1_start}\t{seq2_start}\t{score}")
 
 
 # Driver
 motif_pairs = create_motif_pairing()
 align(motif_pairs)
+
+
 
