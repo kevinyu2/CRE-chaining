@@ -3,6 +3,12 @@ from collections import defaultdict
 import itertools
 import numpy as np
 
+'''
+Step 2 in the pipeline.
+
+Uses preprocessed data (motifs for each genome for each ACR) and the motif pair data 
+to output the anchors for each pair of ACRs across all genomes
+'''
 
 # Should be tsv of motif1, motif2, start1, start2, score. Motif1 and motif2 are sorted in alphabetical order
 # Returns a dict that pairs (motif1, motif2) : (start1, start2, score)

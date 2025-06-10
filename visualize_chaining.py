@@ -3,6 +3,14 @@ import time
 from matplotlib import pyplot as plt
 import random
 
+'''
+Step 4 in the pipeline.
+
+Takes in the files with the chain length data. Creates files with the frequencies of 
+chain length, number of anchors, and ratio of chain length to number of anchors. Creates
+histograms with this data.
+'''
+
 def output_frequency_files(input_dir, output_dir):
     chain_length = {}
     anchor_length = {}
@@ -18,7 +26,10 @@ def output_frequency_files(input_dir, output_dir):
             for line in acr_file:
                 line_arr = line.split("\t")
                 #count frequencies of each stat
-                chain_length[int(line_arr[2])] = chain_length.get(int(line_arr[2]), 0) + 1
+                if len(line_arr) < 2:
+                    continue
+                chain_len = round(float(line_arr[2]))
+                chain_length[chain_len] = chain_length.get(chain_len, 0) + 1
                 anchor_length[int(line_arr[3])] = anchor_length.get(int(line_arr[3]), 0) + 1
                 ratio = float(line_arr[2]) / float(line_arr[3])
                 ratios[round(ratio, 2)] = ratios.get(round(ratio, 2), 0) + 1
@@ -78,6 +89,6 @@ ratios = dictionaries[2]
 #anchor_length = input_frequency_file("../Frequencies_min1/anchor_length_frequencies.txt")
 #ratios = input_frequency_file("../Frequencies_min1/ratio_frequencies.txt")
 
-make_histogram(chain_length, 'chain_min1.png', 1, "Chain Length", "Chain Length Frequencies (Intra-ACR)")
-make_histogram(anchor_length, 'anchor_min1.png', 1, "Number of Anchors", "Frequencies of the Number of Anchors (Intra-ACR)")
-make_histogram(ratios, 'ratios_min1.png', .01, "Ratio of Chain Length to Number of Anchors", "Ratio Frequencies (Intra-ACR)")
+make_histogram(chain_length, 'chain_min1_intra.png', 1, "Chain Length", "Chain Length Frequencies (Intra-ACR)")
+make_histogram(anchor_length, 'anchor_min1_intra.png', 1, "Number of Anchors", "Frequencies of the Number of Anchors (Intra-ACR)")
+make_histogram(ratios, 'ratios_min1_intra.png', .01, "Ratio of Chain Length to Number of Anchors", "Ratio Frequencies (Intra-ACR)")

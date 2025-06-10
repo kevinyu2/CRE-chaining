@@ -3,6 +3,13 @@ from pathlib import Path
 import pandas as pd
 import os
 
+'''
+Step 1 in the pipeline.
+
+Organizes the ATAC-seq and XStreme data. Creates a folder for each ACR. Each folder
+contains a file for each genome which lists the motifs and corresponding locations
+'''
+
 search_dir = Path("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes")
 root_output = "/home/mwarr"
 

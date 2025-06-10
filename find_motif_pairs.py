@@ -4,6 +4,12 @@ from collections import defaultdict
 from Bio import Align
 import sys
 
+'''
+Step 1 in the pipeline.
+
+Creates a data file listing all pairs of motifs from the genomes which share a motif in the 
+TOMTOM database. Also checks alignment and outputs a score.
+'''
 
 # Find pairs of motifs that each share a matched tomtom motif
 # Dict is structured as: tomtom_motif : {acr_motif_1, acr_motif_2}
