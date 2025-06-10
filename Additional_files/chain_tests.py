@@ -3,6 +3,10 @@ import random
 from collections import defaultdict
 import time
 
+'''
+Tests our chaining file by comparing the output with longest common subsequence (should be equivalent)
+'''
+
 def generate_str(length):
     rand_str = ""
     for i in range(length):
