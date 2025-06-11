@@ -67,7 +67,7 @@ def get_high_scores_statistically(input_dir, outfile, thresh_score, thresh_stdev
                 # print()
                 # print(ratio_list)
                 # print(score_list)
-                if np.mean() > get_stdev_threshold(thresh_stdevs, np.mean(anchors_list)) and np.mean(score_list) > thresh_score :
+                if np.mean(score_list) > get_stdev_threshold(thresh_stdevs, np.mean(anchors_list)) and np.mean(score_list) > thresh_score :
                     f.write(f"{file_name}\t{np.mean(score_list)/np.mean(anchors_list)}\t{np.mean(score_list)}\t{line_count}\n")
 
 

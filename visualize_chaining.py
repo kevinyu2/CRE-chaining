@@ -81,7 +81,7 @@ def generate_test_data(filename, num_lines):
 
 
 
-dictionaries = output_frequency_files("../Chaining_min1_intra", "../Frequencies_min1_intra")
+dictionaries = output_frequency_files("../Chaining_min0", "../Frequencies_min0")
 chain_length = dictionaries[0]
 anchor_length = dictionaries[1]
 ratios = dictionaries[2]
@@ -89,6 +89,6 @@ ratios = dictionaries[2]
 #anchor_length = input_frequency_file("../Frequencies_min1/anchor_length_frequencies.txt")
 #ratios = input_frequency_file("../Frequencies_min1/ratio_frequencies.txt")
 
-make_histogram(chain_length, 'chain_min1_intra.png', 1, "Chain Length", "Chain Length Frequencies (Intra-ACR)")
-make_histogram(anchor_length, 'anchor_min1_intra.png', 1, "Number of Anchors", "Frequencies of the Number of Anchors (Intra-ACR)")
-make_histogram(ratios, 'ratios_min1_intra.png', .01, "Ratio of Chain Length to Number of Anchors", "Ratio Frequencies (Intra-ACR)")
+make_histogram(chain_length, 'chain_min0.png', 1, "Chain Length", "Chain Length Frequencies (Loose Alignment)")
+make_histogram(anchor_length, 'anchor_min0.png', 1, "Number of Anchors", "Frequencies of the Number of Anchors (Loose Alignment)")
+make_histogram(ratios, 'ratios_min0.png', .01, "Ratio of Chain Length to Number of Anchors", "Ratio Frequencies (Loose Alignment)")
