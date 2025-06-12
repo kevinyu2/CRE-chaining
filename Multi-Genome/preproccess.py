@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 import os
+import time
 
 '''
 Step 1 in the pipeline.
@@ -11,9 +12,12 @@ contains a file for each genome which lists the motifs and corresponding locatio
 '''
 
 search_dir = Path("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes")
-root_output = "/home/mwarr"
+root_output = "/home/mwarr/Preprocessed_Data"
 
 x_streme_folders = [folder for folder in search_dir.glob("*._xstreme") if folder.is_dir()]
+
+count = 0
+start_time = time.time()
 
 for x_treme_folder in x_streme_folders:
     #create folder corresponding with the ACR in the root output directory
@@ -31,7 +35,7 @@ for x_treme_folder in x_streme_folders:
     with open(str(search_dir) + "/" + genome_list_file) as input_file:
         for line in input_file:
             with open(f"{acr_folder_name}/{line.strip()}.tsv", "w") as output_file:
-                output_file.write("motif\tstart\tstop\n")
+                output_file.write("motif\tstart\tstop\tstrand\n")
 
      
     #Find all the motifs for each genome in this ACR and record
@@ -63,8 +67,9 @@ for x_treme_folder in x_streme_folders:
                     +"listed in the group.txt file")
                 with open(f"{acr_folder_name}/{line_arr[2]}.tsv", 'a') as write_file:
                     #write to file -- motif    start    stop
-                    write_file.write(f"{sequence.strip()}\t{line_arr[3]}\t{line_arr[4]}\n")
-        print(f"Finished {fimo_folder}/fimo.tsv")
+                    write_file.write(f"{sequence.strip()}\t{line_arr[3]}\t{line_arr[4]}\t{line_arr[5]}\n")
+    count += 1
+    print(f"Finished {count} folders in {time.time() - start_time}")
 
         
 

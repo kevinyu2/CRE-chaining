@@ -14,7 +14,7 @@ Uses the anchor data to chain all 79,000 regions (79 genomes with 1,000 ACRs eac
 file for each ACR pair. Each file contains every genome pair for the given ACR with the chain length
 and the number of anchors.
 '''
-
+@profile
 def run_chaining_all(input_root_dir, output_dir):
 
     search_dir = Path(input_root_dir)
@@ -25,7 +25,8 @@ def run_chaining_all(input_root_dir, output_dir):
         count += 1
         if count % 100 == 0:
             print(f"Finished {count} files after {time.time() - start_time} seconds", flush=True)
-        
+        if count == 1000 :
+            return
         genome_pairs = defaultdict(list)
         with open(acr_combo) as acr_combo_file:
             #file is formatted: genome1 \t location \t ... ## ... genome4 \t location \t
@@ -54,14 +55,14 @@ def run_chaining_all(input_root_dir, output_dir):
         with open(f"{output_dir}/{acr_combo.stem}.tsv", "w") as output_file:
             # Keep track of seen items
             seen_dict = {}
-            for pair in genome_pairs.keys():
-                key = tuple(genome_pairs[pair])
+            for pair, anchors in genome_pairs.items():
+                key = tuple(anchors)
                 if key in seen_dict :
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(genome_pairs[pair])}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
                 else :
-                    chain_len = chain(genome_pairs[pair])
+                    chain_len = chain(anchors)
                     seen_dict[key] = chain_len
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(genome_pairs[pair])}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
 
             # for pair in genome_pairs.keys():
@@ -126,14 +127,14 @@ def run_chaining_all_weighted(input_root_dir, output_dir):
         with open(f"{output_dir}/{acr_combo.stem}.tsv", "w") as output_file:
             # Keep track of seen items
             seen_dict = {}
-            for pair in genome_pairs.keys():
-                key = tuple(genome_pairs[pair])
+            for pair, anchors in genome_pairs.items():
+                key = tuple(anchors)
                 if key in seen_dict :
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(genome_pairs[pair])}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
                 else :
-                    chain_len = chain_weighted(genome_pairs[pair])
+                    chain_len = chain_weighted(anchors)
                     seen_dict[key] = chain_len
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(genome_pairs[pair])}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
 
 
@@ -194,15 +195,15 @@ def inner_loop(input_root_dir, output_dir, acr_combo) :
     with open(f"{output_dir}/{acr_combo.stem}.tsv", "w") as output_file:
         # Keep track of seen items
         seen_dict = {}
-        for pair in genome_pairs.keys():
-            key = tuple(genome_pairs[pair])
+        for pair, anchors in genome_pairs.items():
+            key = tuple(anchors)
             if key in seen_dict :
-                output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(genome_pairs[pair])}\n")
+                output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
             else :
-                chain_len = chain(genome_pairs[pair])
+                chain_len = chain(anchors)
                 seen_dict[key] = chain_len
-                output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(genome_pairs[pair])}\n")
+                output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
 
 
-run_chaining_all_intra("../Anchors_min1_intra", "../Chaining_min1_intra")
+run_chaining_all("/home/mwarr/Anchors_min1", "/home/mwarr/test_profiling")

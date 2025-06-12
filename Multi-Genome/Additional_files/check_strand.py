@@ -49,7 +49,7 @@ def find_section_group(file, start_ind, end_ind, genome_ID):
     print(sequence[start_ind - 1 : end_ind])
         
 
-find_section_group("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/Chr1_15420017to15421784.group.fa", 74, 88, "IP-Sln-22_chr1_17054359to17054978")
+#find_section_group("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/Chr1_15420017to15421784.group.fa", 74, 88, "IP-Sln-22_chr1_17054359to17054978")
 
 #find_section_fna("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/GCA_946413935.1_IP-Sln-22.PacbioHiFiAssembly_genomic.fna", 74, 88)
 

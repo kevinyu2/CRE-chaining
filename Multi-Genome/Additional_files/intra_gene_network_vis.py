@@ -8,8 +8,8 @@ Visualizes an intra-gene genome comparison as a graph
 '''
 
 ACR_FOLDER = '/home/mwarr/Chaining_min1_intra/'
-ACR = 'Chr1_12966791to12968243.tsv'
-mode = 'smallest'
+ACR = 'Chr4_297132to298163.tsv'
+mode = 'largest'
 min_weight = 5
 
 
@@ -30,12 +30,14 @@ G = nx.Graph()
 G.add_nodes_from(max_chain_lengths.keys())
 
 
-with open(ACR_FILE, 'r') as f:
+with open(ACR_FOLDER + ACR, 'r') as f:
     for line in f:
         line_arr = line.rstrip().split('\t')
         if line_arr[0] != line_arr[1] :
             if mode == 'smallest' or mode == 's':
                 if min(max_chain_lengths[line_arr[0]], max_chain_lengths[line_arr[1]]) - int(line_arr[2]) >= min_weight :
+                    # if min(max_chain_lengths[line_arr[0]], max_chain_lengths[line_arr[1]]) - int(line_arr[2]) >= 30 :
+                    #     print(line_arr)
                     G.add_edge(line_arr[0], line_arr[1], weight = min(max_chain_lengths[line_arr[0]], max_chain_lengths[line_arr[1]]) - int(line_arr[2]))
             else :
                 if max(max_chain_lengths[line_arr[0]], max_chain_lengths[line_arr[1]]) - int(line_arr[2]) >= min_weight :
@@ -61,4 +63,4 @@ else :
     plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm = norm), label='Largest Max Possible - Chain Length')
 
 plt.axis('off')
-plt.savefig(f'/home/kyu/{ACR}_network.png')
+plt.savefig(f'/home/kyu/{ACR}_network_{mode}.png')
