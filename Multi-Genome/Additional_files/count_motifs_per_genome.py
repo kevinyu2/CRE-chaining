@@ -35,8 +35,11 @@ def find_motif_counts(output_file, tomtom_set) :
         search_dir = Path("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes")
         x_streme_folders = [folder for folder in search_dir.glob("*._xstreme") if folder.is_dir()]
 
-        # {(acr, genome): (total_count, tomtom_count)}
-        motif_count_dict = defaultdict(lambda: [0, 0])
+        # {(acr, genome): (total_count, tomtom_count, unique start tomtom count)}
+        motif_count_dict = defaultdict(lambda: [0, 0, 0])
+
+        # {(acr, genome): set()}
+        unique_starts = defaultdict(set)
 
         for x_treme_folder in x_streme_folders:
             # Find the acr name
@@ -51,7 +54,7 @@ def find_motif_counts(output_file, tomtom_set) :
                     try:
                         read_file.readline()
                     except:
-                        print(f"{fimo_folder}/fimmo.tsv is empty")
+                        print(f"{fimo_folder}/fimo.tsv is empty")
 
                     #iterate through each row in the table
                     for line in read_file:
@@ -68,16 +71,20 @@ def find_motif_counts(output_file, tomtom_set) :
                         sequence = line_arr[0][index:]
 
                         motif_count_dict[(acr_name, line_arr[2])][0] += 1
+                        # Make it exist to prevent key errors
+                        unique_starts[(acr_name, line_arr[2])].add(-10000)
                         if str(sequence) in tomtom_set :
                             motif_count_dict[(acr_name, line_arr[2])][1] += 1
+                            # Check if unique
+                            unique_starts[(acr_name, line_arr[2])].add(int(line_arr[3]))
 
 
-        f.write(f"acr\tgenome\ttotal_motif_count\ttomtom_motif_count\n")
+        f.write(f"acr\tgenome\ttotal_motif_count\ttomtom_motif_count\ttomtom_motif_count_unique_start\n")
 
         for pair in motif_count_dict.keys() :
-            f.write(f"{pair[0]}\t{pair[1]}\t{motif_count_dict[pair][0]}\t{motif_count_dict[pair][1]}\n")
+            f.write(f"{pair[0]}\t{pair[1]}\t{motif_count_dict[pair][0]}\t{motif_count_dict[pair][1]}\t{len(unique_starts[pair]) - 1}\n")
 
 
 tomtom_set = create_tomtom_set()
 print("Found tomtom set")
-find_motif_counts('../motif_counts.tsv', tomtom_set)
+find_motif_counts('/home/mwarr/motif_counts.tsv', tomtom_set)

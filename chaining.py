@@ -1,4 +1,3 @@
-from segment_tree import *
 import bisect
 
 import numpy as np
@@ -96,11 +95,35 @@ class PrefixMaxBIT:
             i -= i & -i
         return res
 
+
+########################
+# CALL THIS FUNCTION
+
+def chain_driver(mems, is_weighted):
+    if is_weighted:
+        negative_mems = [(anchor[0], -1 * anchor[1], anchor[2]) for anchor in mems]
+        return max(chain_weighted(mems), chain_weighted(negative_mems))
+
+    else :
+        negative_mems = [(anchor[0], -1 * anchor[1]) for anchor in mems]
+        return (max(chain(mems), chain(negative_mems)))
+
 # mems = [(1, 1, 4), (2, 1, 5), (3, 3, 1.5), (4, 10, 9), (5, 5, 6), (6, 6, 5)]
-# print(chain_weighted(mems) == 17.5)
+# print(chain_driver(mems, True))
+# # == 17.5
 
 # mems = [(3, 5, 10), (4, 7, 20), (5, 6, 1), (4, 5, 1), (1, 2, 1), (2, 3, 1), (3, 4, 1), (1, 1, 4)]
-# print(chain_weighted(mems) == 35)
+# print(chain_driver(mems, True))
+# # == 35
 
 # mems = [(4, 5, 1), (2, 3, 1), (3, 4, 1), (5, 1, 7)]
-# print(chain_weighted(mems) == 7)
+# print(chain_driver(mems, True))
+# # == 8
+
+# mems = [(1, 7), (2, 6), (3, 5), (4, 4)]
+# print(chain_driver(mems, False))
+# # == 4
+
+# mems = [(1,3), (4,4), (5,3), (6,2)]
+# print(chain_driver(mems, False))
+# # == 3

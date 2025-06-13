@@ -1,8 +1,10 @@
+import sys
+sys.path.append("../")
 from pathlib import Path
 from collections import defaultdict
 import numpy as np
 import random
-from chaining import chain, chain_weighted
+from chaining import chain_driver
 import os
 import time
 import itertools
@@ -14,7 +16,7 @@ Uses the anchor data to chain all 79,000 regions (79 genomes with 1,000 ACRs eac
 file for each ACR pair. Each file contains every genome pair for the given ACR with the chain length
 and the number of anchors.
 '''
-@profile
+
 def run_chaining_all(input_root_dir, output_dir):
 
     search_dir = Path(input_root_dir)
@@ -25,8 +27,7 @@ def run_chaining_all(input_root_dir, output_dir):
         count += 1
         if count % 100 == 0:
             print(f"Finished {count} files after {time.time() - start_time} seconds", flush=True)
-        if count == 1000 :
-            return
+        
         genome_pairs = defaultdict(list)
         with open(acr_combo) as acr_combo_file:
             #file is formatted: genome1 \t location \t ... ## ... genome4 \t location \t
@@ -60,7 +61,7 @@ def run_chaining_all(input_root_dir, output_dir):
                 if key in seen_dict :
                     output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
                 else :
-                    chain_len = chain(anchors)
+                    chain_len = chain_driver(anchors, False)
                     seen_dict[key] = chain_len
                     output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
@@ -132,7 +133,7 @@ def run_chaining_all_weighted(input_root_dir, output_dir):
                 if key in seen_dict :
                     output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
                 else :
-                    chain_len = chain_weighted(anchors)
+                    chain_len = chain_driver(anchors, True)
                     seen_dict[key] = chain_len
                     output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
@@ -200,10 +201,10 @@ def inner_loop(input_root_dir, output_dir, acr_combo) :
             if key in seen_dict :
                 output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
             else :
-                chain_len = chain(anchors)
+                chain_len = chain_driver(anchors, False)
                 seen_dict[key] = chain_len
                 output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
 
 
-run_chaining_all("/home/mwarr/Anchors_min1", "/home/mwarr/test_profiling")
+run_chaining_all("/home/mwarr/Data/Anchors_min1", "/home/mwarr/Data/Chaining_min1")

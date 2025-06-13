@@ -14,7 +14,7 @@ to output the anchors for each pair of ACRs across all genomes
 # Returns a dict that pairs (motif1, motif2) : (start1, start2, score)
 def read_motif_pairs(min_score):
     print("Reading Scores File")
-    SCORES_FILE_NAME = "scores.tsv"
+    SCORES_FILE_NAME = "/home/mwarr/scores.tsv"
 
     pairwise_score_dict = {}
 
@@ -28,7 +28,7 @@ def read_motif_pairs(min_score):
 
 
 
-# Finds pairwise for all chromosomes            
+# Finds pairwise for all ACRs            
 # Make sure to clear the output folder first since we are appending to files 
 # Printed output is a file for each chr chr pair, each line has genome\tloc\tgenome\tloc\t...genome\tloc##genome\tloc\t....genome\tloc\nscore\n       
 def find_anchors_all_pairs(data_dir, out_dir, score_dict) :
@@ -238,8 +238,8 @@ def find_anchors_all_pairs_intra_acr(data_dir, out_dir, score_dict) :
 
 
 
-DATA_DIR = '../Preprocessed_Data'
-OUT_DIR = '../Anchors_min1_intra'
+DATA_DIR = '/home/mwarr/Preprocessed_Data'
+OUT_DIR = '/home/mwarr/Data/Anchors_min1'
 MIN_SCORE = 1.0
 
 
@@ -253,6 +253,6 @@ MIN_SCORE = 1.0
 # find_anchors_all_pairs_intra_acr('../test_folder', '../test_out', score_dict)
 
 score_dict = read_motif_pairs(MIN_SCORE)
-find_anchors_all_pairs_intra_acr(DATA_DIR, OUT_DIR, score_dict)
-# find_anchors_all_pairs(DATA_DIR, OUT_DIR, score_dict)
+# find_anchors_all_pairs_intra_acr(DATA_DIR, OUT_DIR, score_dict)
+find_anchors_all_pairs(DATA_DIR, OUT_DIR, score_dict)
 
