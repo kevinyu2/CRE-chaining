@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import defaultdict
 import numpy as np
 import random
-from chaining import chain_driver
+from chaining import chain_driver, chain_local_driver
 import os
 import time
 import itertools
@@ -207,4 +207,54 @@ def inner_loop(input_root_dir, output_dir, acr_combo) :
 
 
 
-run_chaining_all("/home/mwarr/Data/Anchors_min1", "/home/mwarr/Data/Chaining_min1")
+def run_chaining_all_local(input_root_dir, output_dir):
+
+    search_dir = Path(input_root_dir)
+    #loop through all files (combinations of ACRs)
+    count = 0
+    start_time = time.time()
+    for acr_combo in search_dir.glob('*'):
+        count += 1
+        if count % 100 == 0:
+            print(f"Finished {count} files after {time.time() - start_time} seconds", flush=True)
+        
+        genome_pairs = defaultdict(list)
+        with open(acr_combo) as acr_combo_file:
+            #file is formatted: genome1 \t location \t ... ## ... genome4 \t location \t
+            for line1,line2 in itertools.zip_longest(*[acr_combo_file]*2):
+                line_arr = line1.split("##")
+                if len(line_arr) == 1:
+                    continue
+                motif_match_1 = line_arr[0].strip().split("\t")
+                motif_match_2 = line_arr[1].strip().split("\t")
+
+                try:
+                    assert(len(motif_match_1) % 2 == 0 and len(motif_match_2) % 2 == 0)
+                except:
+                    print(f"ERROR! There are not the same number of genomes as locations in an entry in {str(acr_combo)}")
+                
+                #consider all pairs of motifs from 1 and 2
+                for i in range(0, len(motif_match_1), 2):
+                    for j in range(0, len(motif_match_2), 2):
+                        genome_pair = (motif_match_1[i], motif_match_2[j])
+
+                        pair_indices = (int(motif_match_1[i+1]), int(motif_match_2[j+1].strip()))
+                            
+                        genome_pairs[genome_pair].append(pair_indices)
+        
+        #output in this format: genome1 \t genome2 \t chain_length \t #_of_anchors
+        with open(f"{output_dir}/{acr_combo.stem}.tsv", "w") as output_file:
+            # Keep track of seen items
+            seen_dict = {}
+            for pair, anchors in genome_pairs.items():
+                key = tuple(anchors)
+                if key in seen_dict :
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
+                else :
+                    chain_score = chain_local_driver(anchors, 5, -2, -1, False)
+                    seen_dict[key] = chain_score
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_score}\t{len(anchors)}\n")
+
+
+
+run_chaining_all_local("/home/mwarr/Data/Anchors_min1_local", "/home/mwarr/Data/Chaining_min1_local")

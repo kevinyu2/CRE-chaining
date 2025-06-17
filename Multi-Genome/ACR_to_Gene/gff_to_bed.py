@@ -49,4 +49,4 @@ def gff_to_bed(input_gff, output_bed, tss_thresh, use_fiveputr) :
             out.write(f"{gene_tuple[2]}\t{gene_tuple[0]}\t{gene_tuple[1]}\t{gene_tuple[3]}\t0\t{gene_tuple[4]}\n")
 
 
-gff_to_bed("TAIR10_GFF3_genes.gff", "tair10promoter.bed", 2000, True)
+gff_to_bed("/home/kyu/TAIR10_GFF3_genes.gff", "/home/kyu/tair10promoter.bed", 2000, True)

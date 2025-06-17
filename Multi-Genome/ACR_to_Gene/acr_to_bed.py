@@ -24,4 +24,4 @@ def acr_to_bed(output_file) :
             chromosome = name.split('_')[0]
             out.write(f"{chromosome}\t{start}\t{stop}\t{name}\n")
 
-acr_to_bed("acr_regions.bed")
+acr_to_bed("/home/kyu/acr_regions.bed")
