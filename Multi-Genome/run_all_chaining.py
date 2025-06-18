@@ -249,11 +249,11 @@ def run_chaining_all_local(input_root_dir, output_dir):
             for pair, anchors in genome_pairs.items():
                 key = tuple(anchors)
                 if key in seen_dict :
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key][0]}\t{seen_dict[key][1]}\n")
                 else :
                     chain_score = chain_local_driver(anchors, 5, -2, -1, False)
                     seen_dict[key] = chain_score
-                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_score}\t{len(anchors)}\n")
+                    output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_score[0]}\t{chain_score[1]}\n")
 
 
 

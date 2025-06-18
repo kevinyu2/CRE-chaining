@@ -7,8 +7,24 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 
-distance_file = '/home/mwarr/Data/Clustering/Distances_min1_intra_alpha50/Chr4_3974621to3975086.tsv'
-distance_threshold = 0.05 # What the distance must be to make it into a cluster
+#Clusters with agglomerative hierarchical clustering given a distance matrix (pairwise distances) 
+#and return silhouette score or -2 if the Silhouette score cannot be computed (i.e. all are in one cluster or in their own cluster)
+#also returns the labels
+def hier_cluster_get_sil(distance_matrix, distance_threshold):
+    # Cluster
+    clustering = AgglomerativeClustering(
+        metric='precomputed', 
+        linkage='average',
+        distance_threshold=distance_threshold,
+        n_clusters=None
+    )
+    labels = clustering.fit_predict(distance_matrix)
+    if max(labels) != 0:
+        score = silhouette_score(distance_matrix, labels, metric='precomputed')
+        print(f"Silhouette score: {score:.3f}")  
+    else:
+        score = -2  
+    return (score, labels)
 
 
 def hier_cluster(distance_file, distance_threshold):
@@ -112,3 +128,4 @@ def visualize(labels, distance_matrix, distance_threshold):
     plt.title(f"UMAP Projection of Heirarchical, Distance = {distance_threshold}")
 
     plt.savefig('/home/mwarr/clusters_hier.png')
+

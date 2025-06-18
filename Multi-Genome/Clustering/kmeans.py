@@ -22,10 +22,12 @@ def create_index_dict(genome_dir, file_path):
             count += 1
     return genome_ind
 
-#Creates a matrix of the distance scores between each genome pair
-def get_score_matrix(file_path, genome_ind):
+#Creates a matrix of the distance dist_matrix between each genome pair
+def get_dist_matrix(file_path, genome_ind):
     size = len(genome_ind.keys())
-    scores = np.zeros((size, size))
+    dist_matrix = np.full((size, size), 1.0)
+    np.fill_diagonal(dist_matrix, 0)
+    
     with open(file_path) as file:
         for line in file:
             line_arr = line.split("\t")
@@ -38,30 +40,38 @@ def get_score_matrix(file_path, genome_ind):
                 score = 0
             genome1_ind = genome_ind[genome1]
             genome2_ind = genome_ind[genome2]
-            scores[genome1_ind][genome2_ind] = score
-            scores[genome2_ind][genome1_ind] = score
-    return scores
+            dist_matrix[genome1_ind][genome2_ind] = score
+            dist_matrix[genome2_ind][genome1_ind] = score
+    return dist_matrix
+
+def kmeans_cluster_get_sil(dist_matrix, k):
+    kmeans = KMeans(n_clusters = k, n_init='auto', random_state = 0)
+    labels = kmeans.fit_predict(dist_matrix)
+    sil_score = silhouette_score(dist_matrix, labels, metric="precomputed")
+    return (sil_score, labels)
+
 
 #Gives the silhouette score (-1 to 1, with 1 being the best) of the clustering within a  
 #single ACR, using distances as the features
 def cluster_intra_eval(k, file_path, genome_dir):
     genome_ind_dict = create_index_dict(genome_dir, file_path)
-    scores = get_score_matrix(file_path, genome_ind_dict)
-    #Don't cluster if there aren't enough unique scores
+    dist_matrix = get_dist_matrix(file_path, genome_ind_dict)
     kmeans = KMeans(n_clusters = k, n_init='auto', random_state = 0)
     try:
-        labels = kmeans.fit_predict(scores)
+        labels = kmeans.fit_predict(dist_matrix)
     except:
+        #if warnings are treated as errors, this will be returned if
+        # 'k is greater than the number of unique clusters'
         return (-2, 0)
-    sil_score = silhouette_score(scores, labels, metric="precomputed")
+    sil_score = silhouette_score(dist_matrix, labels, metric="precomputed")
     return (sil_score, labels)
 
 #Cluster the distances within a single ACR with distances as features
 def cluster_intra_output(k, file_path, genome_dir, output_dir, silhouette):
     genome_ind_dict = create_index_dict(genome_dir, file_path)
-    scores = get_score_matrix(file_path, genome_ind_dict)
+    dist_matrix = get_dist_matrix(file_path, genome_ind_dict)
     kmeans = KMeans(n_clusters = k, n_init='auto', random_state = 0)
-    labels = kmeans.fit_predict(scores)
+    labels = kmeans.fit_predict(dist_matrix)
     with open(f"{output_dir}/{file_path.stem}_k{k}_sil{round(silhouette, 2)}.tsv", "w") as out_file:
         for genome, index in genome_ind_dict.items():
             label = labels[index]
@@ -113,28 +123,10 @@ def cluster_all_driver(input_dir, genome_dir, output_dir):
 
 
 
-INPUT_DIR = "/home/mwarr/Data/Clustering/Distances_min1_intra_alpha50/Chr2_5345616to5346848.tsv"
-OUTPUT_DIR = "/home/mwarr/Data/Clustering/Labels_kmeans_min1_intra_alpha50"
-GENOME_DIR = "/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes"
+# INPUT_DIR = "/home/mwarr/Data/Clustering/Distances_min1_intra_alpha50/Chr2_5345616to5346848.tsv"
+# OUTPUT_DIR = "/home/mwarr/Data/Clustering/Labels_kmeans_min1_intra_alpha50"
+# GENOME_DIR = "/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes"
 
-
-genome_ind = create_index_dict(GENOME_DIR, Path(INPUT_DIR))
-dist_matrix = get_score_matrix(Path(INPUT_DIR), genome_ind)
-kmeans = KMeans(n_clusters = 16, n_init='auto', random_state = 0)
-labels = kmeans.fit_predict(dist_matrix)
-visualize_clusters(16, dist_matrix, "/home/mwarr/clusters.png", labels)
-
-#cluster_all_driver(INPUT_DIR, GENOME_DIR, OUTPUT_DIR)
-
-# sil_scores = []
-# for i in range(2, 20):
-#     sil_score = cluster_intra_eval(i, Path(INPUT_DIR), GENOME_DIR)
-#     if sil_score == -2:
-#         break
-#     sil_scores.append(sil_score)
-
-# plt.plot(sil_scores)
-# plt.savefig("/home/mwarr/silhouette.png")
 
 
 

@@ -8,11 +8,20 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 
+#Clusters with dbscan given a distance matrix (pairwise distances) and return silhouette score
+#or -2 if the Silhouette score cannot be computed (i.e. all are in one cluster or in their own cluster)
+#also returns the labels
+def db_cluster_get_sil(distance_matrix, distance_threshold):
+    labels = DBSCAN(eps=distance_threshold, min_samples=1, metric='precomputed').fit_predict(distance_matrix)
+    if max(labels) != 0:
+        score = silhouette_score(distance_matrix, labels, metric='precomputed')
+        print(f"Silhouette score: {score:.3f}")  
+    else:
+        score = -2  
+    return (score, labels)
 
-distance_file = '/home/mwarr/Data/Clustering/Distances_min1_mini_alpha50.tsv'
-distance_threshold = 0.7 # What the distance must be to make it into a cluster
-
-def db_cluster(distance_file, distance_threshold):
+#Clusters with dpscan and calculates the inter and intra cluster averages
+def db_cluster_get_averages(distance_file, distance_threshold):
     print(f"Using Distance Threshold {distance_threshold}")
     print()
 
@@ -46,13 +55,14 @@ def db_cluster(distance_file, distance_threshold):
             distance_matrix[index_dict[line_arr[1]]][index_dict[line_arr[0]]] = line_arr[2]
 
     # Cluster
+    print("Before clustering")
     labels = DBSCAN(eps=distance_threshold, min_samples=1, metric='precomputed').fit_predict(distance_matrix)
+    print("After clustering")
 
+    for i,lab in enumerate(labels) :
+        print(f"{label_dict[i]}\t{lab}\n", end = '')
 
-    # for i,lab in enumerate(labels) :
-    #     print(f"{label_dict[i]}\t{lab}\n", end = '')
-
-    # {cluster_num: (idx1,idx2,...)}
+    {cluster_num: (idx1,idx2,...)}
     cluster_dict = defaultdict(set)
     for i, lab in enumerate(labels) :
         cluster_dict[lab].add(i)
@@ -70,13 +80,13 @@ def db_cluster(distance_file, distance_threshold):
                 if acr1 != acr2 and acr1 not in cluster and acr2 in cluster :
                     inter_distances.append(distance_matrix[acr1][acr2])
         
-        # print(f"Cluster no: {cluster_no}")
-        # for i, c in enumerate(cluster) :
-        #     if i != 0 :
-        #         print("\t", end = '')
-        #     print(f"{label_dict[c]}", end = '')
-        # print()
-        # print(f"Intra Cluster Average Distance: {np.mean(intra_distances)}\nInter Cluster Average Distance: {np.mean(inter_distances)}\n")
+        print(f"Cluster no: {cluster_no}")
+        for i, c in enumerate(cluster) :
+            if i != 0 :
+                print("\t", end = '')
+            print(f"{label_dict[c]}", end = '')
+        print()
+        print(f"Intra Cluster Average Distance: {np.mean(intra_distances)}\nInter Cluster Average Distance: {np.mean(inter_distances)}\n")
 
     if max(labels) != 0:
         score = silhouette_score(distance_matrix, labels, metric='precomputed')
@@ -85,10 +95,6 @@ def db_cluster(distance_file, distance_threshold):
         score = -2  
 
     return (labels, distance_matrix, score)   
-
-
-
-   
 
 def visualize(labels, distance_matrix, distance_threshold):
     n_clusters = len(np.unique(labels))

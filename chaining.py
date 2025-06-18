@@ -218,15 +218,17 @@ def chain_driver(mems, is_weighted):
 def chain_local_driver(mems, match, mismatch, gap, is_weighted):
     if is_weighted:
         negative_mems = [(anchor[0], -1 * anchor[1], anchor[2]) for anchor in mems]
-        return max(chain_local_weighted(mems, match, mismatch, gap)[0], chain_weighted(negative_mems, match, mismatch, gap)[0])
+        return max(chain_local_weighted(mems, match, mismatch, gap), chain_local_weighted(negative_mems, match, mismatch, gap), key=lambda x: x[0])
 
     else :
-        negative_mems = [(anchor[0], -1 * anchor[1], anchor[2]) for anchor in mems]
-        return (max(chain_local(mems, match, mismatch, gap)[0], chain_local(negative_mems, match, mismatch, gap)[0]))
+        negative_mems = [(anchor[0], -1 * anchor[1]) for anchor in mems]
+        return max(chain_local(mems, match, mismatch, gap), chain_local(negative_mems, match, mismatch, gap), key=lambda x: x[0])
 
+# mems = [(1,6), (2,5), (3, 4), (4, 3)]
+# print(chain_local_driver(mems, 4, -2, -1, False))
 
 # mems = [(0,0), (4,5), (2,8), (5,8), (1, 6), (6,12), (4,9)]
-# print(chain_local(mems, 4, -2, -1))
+# print(chain_local_driver(mems, 4, -2, -1, False))
 
 # mems = [(0,0,2), (4,5,1), (2,8,3), (5,8,2), (1, 6,1.5), (6,12,3.2), (4,9,1.2)]
 # print(chain_local_weighted(mems, 2, -2, -1))
