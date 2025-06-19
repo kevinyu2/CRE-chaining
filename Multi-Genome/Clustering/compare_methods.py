@@ -170,13 +170,13 @@ def create_graphs(best_hier, best_kmeans, best_db, best_spec):
     plt.xlabel("Silhouette Score")
     plt.ylabel("Frequency")
     plt.yscale("log")
-    plt.savefig("/home/mwarr/db_spec_min1_intra_alpha0")
+    plt.savefig("/home/mwarr/spec_sil_min1_intra_alpha0")
     plt.clf()
 
     plt.scatter(spec_clusters, best_spec, s=.1)
     plt.xlabel("Number of clusters")
     plt.ylabel("Silhouette Score")
-    plt.savefig("/home/mwarr/db_spec_min1_intra_alpha0")
+    plt.savefig("/home/mwarr/spec_clus_min1_intra_alpha0")
     plt.clf()
 
 def get_stats(eval_file):
