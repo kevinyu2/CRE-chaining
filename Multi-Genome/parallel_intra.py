@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../")
 from pathlib import Path
+from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
 import random
@@ -24,16 +25,10 @@ def run_chaining_all_intra(input_root_dir, output_dir):
     jobs = [(input_root_dir, output_dir, acr) for acr in acr_combos]
 
 
-    #loop through all files in parallel (combinations of ACRs)
-    count = 0
-    start_time = time.time()
-
 
     with ProcessPoolExecutor(max_workers = 120) as executor:
-        for count, _ in enumerate(executor.map(run_one, jobs), start=1):
-            if count % 100 == 0:
-                elapsed = time.time() - start_time
-                print(f"Finished {count} files after {elapsed:.2f} seconds", flush=True)
+        for _ in tqdm(executor.map(run_one, jobs)):
+            pass
 
 def inner_loop(input_root_dir, output_dir, acr_combo) :
     genome_pairs = defaultdict(list)
