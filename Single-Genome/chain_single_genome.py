@@ -10,6 +10,7 @@ import glob
 import os
 import math
 import time
+import pickle
 
 '''
 The one genome pipeline, parallelized.
@@ -109,6 +110,9 @@ def chain_all_pairs(motif_loc_dict, out_file) :
         count += 1
         print(f"Finished {count}, motif: {motif_name} after {time.time() - start_time} seconds", flush=True)
 
+
+    # with open(f"test_unpar.pkl", "wb") as f:
+    #     pickle.dump(anchor_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
     
     print("Chaining")
     start_time = time.time()
@@ -142,6 +146,7 @@ def chain_all_pairs_local(motif_loc_dict, match, mismatch, gap, out_file) :
         count += 1
         print(f"Finished {count}, motif: {motif_name} after {time.time() - start_time} seconds", flush=True)
 
+    print(anchor_dict, file = 'test_nonpar_unordered_anchors.txt')
 
     print("Chaining")
     start_time = time.time()
