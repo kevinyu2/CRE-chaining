@@ -17,13 +17,34 @@ import pickle
 import shutil
 
 
-
 '''
 The one genome pipeline, parallelized.
 
 Uses preprocessed data (motifs for each genome for each ACR) and the motif pair data 
 to output the anchors for each pair of ACRs across all genomes
 '''
+
+
+###########################################################
+# Global dict
+
+full_anchor_dict = defaultdict(list)
+
+
+###########################################################
+# Helpers for parallelization
+
+def init_worker(d):
+    global full_anchor_dict
+    full_anchor_dict = d
+
+def chunkify(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+#######################################################
+# Motif dict creation
+
 # Takes in an xstreme folder     
 # Gets motif locations
 def get_motif_loc_dict(data_dir) :
@@ -93,14 +114,12 @@ def get_motif_loc_dict_local(data_dir) :
     return motif_loc_dict
 
 
-
+######################################################################
+# Anchors
 
 # Find anchors given a loc dict. For local and global
 def find_anchors(motif_loc_dict) :
     print("Finding Anchors")
-
-    anchor_dict = defaultdict(list)
-    start_time = time.time()
 
     for motif_name, single_motif_dict in tqdm(motif_loc_dict.items()) :
         tqdm.write(f"Processing: {motif_name}")
@@ -108,76 +127,96 @@ def find_anchors(motif_loc_dict) :
         for acr1, acr2 in combinations(single_motif_dict.keys(), 2):
             # Get the Cartesian product of the two value lists
             if acr1 < acr2 :
-                anchor_dict[(acr1, acr2)].extend(list(product(single_motif_dict[acr1], single_motif_dict[acr2])))
+                full_anchor_dict[(acr1, acr2)].extend(list(product(single_motif_dict[acr1], single_motif_dict[acr2])))
             else :
-                anchor_dict[(acr2, acr1)].extend(list(product(single_motif_dict[acr2], single_motif_dict[acr1])))
+                full_anchor_dict[(acr2, acr1)].extend(list(product(single_motif_dict[acr2], single_motif_dict[acr1])))
     
-    with open(f"{start_time}_anchor_dict.pkl", "wb") as f:
-        pickle.dump(anchor_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open(f"{start_time}_anchor_dict.pkl", "wb") as f:
+        # pickle.dump(anchor_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return anchor_dict
 
+####################################################################
+# Global chaining
 
 
 # Parallelized chaining worker
-def single_pair_chaining(args):
-    pair, anchors = args
-    result = chain_driver(anchors, False)
-    return f"{pair[0]}\t{pair[1]}\t{result}\t{len(anchors)}\n"
+def batch_pair_chaining(pairs):
+    results = []
+    for pair in pairs:
+        chain_len = chain_driver(full_anchor_dict[pair], False)
+        results.append(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(full_anchor_dict[pair])}\n")
 
-
+    return results
 
 # Finds pairwise chain length (global)
-# Takes in a dict from earlier and the output directory     
+# Uses global anchor dict dict from earlier and the output directory     
 # Make sure to clear the output folder first since we are appending to files 
 # Printed file in out_file in the format acr1\tacr2\tchain_len\tno_anchors
-def chain_all_pairs(full_anchor_dict, out_file) :
+def chain_all_pairs(out_file) :
 
     print("Chaining")
 
     # Parallelized chaining
-    pair_items = list(full_anchor_dict.items())
-    with Pool(cpu_count()) as pool, open(out_file, 'w') as out:
-        for line in tqdm(pool.imap_unordered(single_pair_chaining, pair_items), total=len(pair_items)):
-            out.write(line)
-           
-# Parallelized local chaining worker
-def single_pair_local_chaining(args):
-    pair, anchors, match, mismatch, gap = args
-    result = chain_local_driver(anchors, match, mismatch, gap, False)
-    return f"{pair[0]}\t{pair[1]}\t{result[0]}\t{result[1]}\n"
+    pair_items = list(full_anchor_dict.keys())
+    batches = list(chunkify(pair_items, 10000000))
+    with Pool(cpu_count(), initializer=init_worker, initargs=(full_anchor_dict,)) as pool, open(out_file, 'w') as out:
+        for lines in tqdm(pool.imap_unordered(batch_pair_chaining, batches), total=len(batches)):
+            out.writelines(lines)
 
+
+
+#######################################################################
+# Local chaining
+
+
+# Parallelized chaining worker
+def batch_pair_local_chaining(args):
+    pairs, match, mismatch, gap = args
+    results = []
+    for pair in pairs:
+        chain_results = chain_local_driver(full_anchor_dict[pair], match, mismatch, gap, False)
+        results.append(f"{pair[0]}\t{pair[1]}\t{chain_results[0]}\t{chain_results[1]}\n")
+
+    return results
 
 
 # Local version
 # Printed file in out_file in the format acr1\tacr2\tchain_score\tchain_len\tno_anchors
-def chain_all_pairs_local(full_anchor_dict, match, mismatch, gap, out_file) :
+def chain_all_pairs_local(match, mismatch, gap, out_file) :
 
     print("Chaining")
+    pair_items = list(full_anchor_dict.keys())
+    batches = list(chunkify(pair_items, 10000000))
 
-    parallelized_inputs = [(pair, anchors, match, mismatch, gap) for pair, anchors in full_anchor_dict.items()]
+    # Add match, mismatch, and gap
+    parallelized_inputs = [(batch, match, mismatch, gap) for batch in batches]
     with Pool(cpu_count()) as pool, open(out_file, 'w') as out:
-        for line in tqdm(pool.imap_unordered(single_pair_local_chaining, parallelized_inputs), total=len(parallelized_inputs)):
-            out.write(line)
+        for lines in tqdm(pool.imap_unordered(batch_pair_local_chaining, parallelized_inputs), total=len(parallelized_inputs)):
+            out.writelines(lines)
+
+
+##############################################################
+# Drivers
 
 # If you have intermediate data (pickled anchor dict director or pickled full dict), can pass the directory name / file location in and it will skip that step
 def chain_global_driver(input_dir, out_file, full_anchor_dict_pkl = None) :
     if full_anchor_dict_pkl == None :
         motif_l_dict = get_motif_loc_dict(input_dir)
-        full_anchor_dict = find_anchors(motif_l_dict)
+        find_anchors(motif_l_dict)
     else :
         full_anchor_dict = pickle.load(full_anchor_dict_pkl)
-    chain_all_pairs(full_anchor_dict, out_file)
+    chain_all_pairs(out_file)
 
 
 def chain_local_driver(input_dir, out_file, match, mismatch, gap, full_anchor_dict_pkl = None) :
     if full_anchor_dict_pkl == None :
         motif_l_dict = get_motif_loc_dict_local(input_dir)
-        full_anchor_dict = find_anchors(motif_l_dict)
+        find_anchors(motif_l_dict)
     else :
         full_anchor_dict = pickle.load(full_anchor_dict_pkl)
-    chain_all_pairs_local(full_anchor_dict, match, mismatch, gap, out_file)
+    chain_all_pairs_local(match, mismatch, gap, out_file)
 
+##########################################################################
 
                              
 chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par.txt")
@@ -187,16 +226,13 @@ chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_ge
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},
 #                 'CDE' : {"b" : [12, 17], "a" : [11], "d" : [4]}}
+# find_anchors(motif_l_dict)
 
 
-# chain_all_pairs(motif_l_dict, "blah")
 
-
-# anchor_dict = {('A', 'B') : [(4, 5), (6, 7), (8, 9), (1, 10)], 
+# full_anchor_dict = {('A', 'B') : [(4, 5), (6, 7), (8, 9), (1, 10)], 
 #                ('B', 'C') : [(1, 15), (2, 2)], 
 #                ('A', 'C') : [(6, 7), (8, 9)]}
+# chain_all_pairs('./test_chain_out_par.tsv')
 
-# chain_all_pairs(anchor_dict, 'Test_chain.txt')
 
-
-# merge_anchors('anchor_pkl_dir')

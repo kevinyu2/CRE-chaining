@@ -19,6 +19,16 @@ file for each ACR pair. Each file contains every genome pair for the given ACR w
 and the number of anchors.
 '''
 
+
+# Batch helper
+def chunkify(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+####################################################################
+# Inter
+
 # Worker function for parallel chaining
 def single_pair_chain(args) :
     input_file, output_dir = args
@@ -73,6 +83,9 @@ def run_chaining_all(input_root_dir, output_dir):
     with Pool(cpu_count()) as pool:
         for _ in tqdm(pool.imap_unordered(single_pair_chain, args), total=len(acr_combos)):
             pass
+
+##############################################################
+# Weighted
 
 # Worker for the weighted version
 def single_pair_chain_weighted(args) :
@@ -129,6 +142,8 @@ def run_chaining_all_weighted(input_root_dir, output_dir):
         for _ in tqdm(pool.imap_unordered(single_pair_chain_weighted, args), total=len(acr_combos)):
             pass
    
+##################################################################
+# Local version
 
 def single_pair_chain_local(args) :
     input_file, output_dir, match, mismatch, gap = args
@@ -171,7 +186,7 @@ def single_pair_chain_local(args) :
                 output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
 
 
-# Driver for the weighted version
+# Driver for the local version
 def run_chaining_all_local(input_root_dir, match, mismatch, gap, output_dir):
     search_dir = Path(input_root_dir)
     acr_combos = list(search_dir.glob('*'))
@@ -182,6 +197,10 @@ def run_chaining_all_local(input_root_dir, match, mismatch, gap, output_dir):
     with Pool(cpu_count()) as pool:
         for _ in tqdm(pool.imap_unordered(single_pair_chain_local, args), total=len(acr_combos)):
             pass
+
+########################################################
+
+
 
 run_chaining_all_local("/home/mwarr/Data/Anchors_min1_local", 5, -2, -1, "/home/mwarr/Data/Chaining_min1_local")
 
