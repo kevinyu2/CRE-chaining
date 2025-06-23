@@ -63,7 +63,8 @@ def get_motif_loc_dict(data_dir) :
                 # The file ends tsv info early
                 if len(line_arr) < 5: 
                     break
-                motif_loc_dict[line_arr[0].split('-')[1]][line_arr[2]].append(int(line_arr[3]))
+                if int(line_arr[3]) not in motif_loc_dict [line_arr[0].split('-')[1]][line_arr[2]] :
+                    motif_loc_dict[line_arr[0].split('-')[1]][line_arr[2]].append(int(line_arr[3]))
     
     # Remove duplicates from repeated sequences (basically remove overlaps)
     for motif, single_motif_dict in motif_loc_dict.items() :
@@ -105,7 +106,6 @@ def get_motif_loc_dict_local(data_dir) :
         for acr, loc_list in single_motif_dict.items() :
             for loc in loc_list :
                 motif_loc_dict[motif][acr].append(acr_no_dict[acr][loc])
-
 
     return motif_loc_dict
 
@@ -299,9 +299,9 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
 
 # Test code
                              
-# chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.txt")
+chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.tsv")
 
-chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_local.tsv", 5, -2, -1)
+# chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_local.tsv", 5, -2, -1)
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},
