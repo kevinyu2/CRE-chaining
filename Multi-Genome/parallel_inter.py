@@ -81,7 +81,7 @@ def run_chaining_all(input_root_dir, output_dir):
     args = [(file, output_dir) for file in acr_combos]
 
     with Pool(cpu_count()) as pool:
-        for _ in tqdm(pool.imap_unordered(single_pair_chain, args), total=len(acr_combos)):
+        for _ in tqdm(pool.imap_unordered(single_pair_chain, args), total=len(acr_combos), miniters = 1000):
             pass
 
 ##############################################################
@@ -179,11 +179,11 @@ def single_pair_chain_local(args) :
         for pair, anchors in genome_pairs.items():
             key = tuple(anchors)
             if key in seen_dict :
-                output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key]}\t{len(anchors)}\n")
+                output_file.write(f"{pair[0]}\t{pair[1]}\t{seen_dict[key][0]}\t{seen_dict[key][1]}\n")
             else :
                 chain_len = chain_local_driver(anchors, match, mismatch, gap, False)
                 seen_dict[key] = chain_len
-                output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len}\t{len(anchors)}\n")
+                output_file.write(f"{pair[0]}\t{pair[1]}\t{chain_len[0]}\t{chain_len[1]}\n")
 
 
 # Driver for the local version
@@ -200,9 +200,9 @@ def run_chaining_all_local(input_root_dir, match, mismatch, gap, output_dir):
 
 ########################################################
 
+# run_chaining_all('/home/mwarr/Data/Anchors_min1', '/home/mwarr/Data/Chaining_min1_par')
 
-
-run_chaining_all_local("/home/mwarr/Data/Anchors_min1_local", 5, -2, -1, "/home/mwarr/Data/Chaining_min1_local")
+run_chaining_all_local("/home/mwarr/Data/Anchors_min1_local", 5, -2, -1, "/home/mwarr/Data/Chaining_min1_local_par")
 
 
 
