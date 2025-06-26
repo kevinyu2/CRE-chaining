@@ -24,6 +24,7 @@ to output the anchors for each pair of ACRs across all genomes
 '''
 # Takes in an xstreme folder     
 # Gets motif locations
+# Note: If there are random regions, make sure the fimo folders are in the form 'fimo_out_rand_#'
 def get_motif_loc_dict(data_dir) :
     # Holds where each motif is located {MOTIF: {acr: [loc, ..., loc] acr:[loc, ..., loc]}}
     motif_loc_dict = defaultdict(lambda: defaultdict(list))
@@ -44,7 +45,13 @@ def get_motif_loc_dict(data_dir) :
                 # The file ends tsv info early
                 if len(line_arr) < 5: 
                     break
-                motif_loc_dict[line_arr[0].split('-')[1]][line_arr[2]].append(int(line_arr[3]))
+                motif = line_arr[0].split('-')[-1]
+                acr = line_arr[2]
+                #append '_rand' to the location if this is a random region
+                if "rand" in str(fimo_file):
+                    acr += "_rand"
+                    print(acr)
+                motif_loc_dict[motif][acr].append(int(line_arr[3]))
     
     # Remove duplicates from repeated sequences (basically remove overlaps)
     for motif, single_motif_dict in motif_loc_dict.items() :
@@ -220,7 +227,7 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap, anchor_dir = N
                              
 chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par.txt")
 
-# chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_local.tsv", 5, -2, -1)
+chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme_ACR_rand/", "/home/mwarr/Data/Chaining_one_rand_local.tsv", 5, -2, -1)
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},
