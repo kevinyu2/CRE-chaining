@@ -9,7 +9,7 @@ Takes in two files:
 1. pairwise upstream genes chaining 
 2. pairwise upstream + random chaining
 
-Randomly chooses half of the ACR regions as 'references'. Returns a dictionary with
+Randomly chooses <reference_size> of the ACR regions as 'references'. Returns a dictionary with
 every non-reference ACR and a list of the chaining scores with all reference ACRs.
 Returns a second dictionary with every random region and the list of chaining scores
 with all reference ACRs.
@@ -121,7 +121,7 @@ def output_avg_score_freq(ACR_dict, rand_dict, output_dir):
 '''
 Reads frequencies from files and creates two side-by-side plots.
 File1 should contain ACR chaining with ACR data.
-File2 should contain ACR chianing with randonm data.
+File2 should contain ACR chianing with random data.
 '''
 def create_plots(file1, file2, title, x_label):
     data1 = [0 for i in range(500)]
