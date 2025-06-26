@@ -301,7 +301,7 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
                              
 # chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.tsv")
 
-chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_local.tsv", 5, -2, -1)
+chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_kmer.tsv", 1, -2000, -1000)
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},

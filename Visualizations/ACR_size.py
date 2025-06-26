@@ -16,7 +16,11 @@ for i, row in motif_df.iterrows() :
     end = int(row['genome'].split('to')[1])
     acr_sizes.append(end - start)
 
-plt.figure()
+# plt.figure()
+# plt.hist(acr_sizes)
+# plt.title("ACR size")
+# plt.savefig("/home/mwarr/ACR_size.png")
+
 plt.scatter(acr_sizes, motif_counts, s = 0.1)
 plt.title("ACR Size vs Motif Count (Tomtom)")
 plt.savefig('/home/kyu/motifs_v_size.png')
