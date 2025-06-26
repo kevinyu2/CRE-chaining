@@ -82,9 +82,9 @@ for cluster_no, cluster in cluster_dict.items() :
         print()
         print(f"Intra Cluster Average Distance: {np.mean(intra_distances)}\nInter Cluster Average Distance: {np.mean(inter_distances)}\n")
 
-if max(labels) != 0:
-    score = silhouette_score(distance_matrix, labels, metric='precomputed')
-    print(f"Silhouette score: {score:.3f}")
-else:
-    score = -2   
+# if max(labels) != 0:
+#     score = silhouette_score(distance_matrix, labels, metric='precomputed')
+#     print(f"Silhouette score: {score:.3f}")
+# else:
+#     score = -2   
 
