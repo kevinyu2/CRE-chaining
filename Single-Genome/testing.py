@@ -1,5 +1,7 @@
 import random
 from rand_vs_upstream import *
+#from final_chaining import *
+import time
 import os
 
 #testing rand_vs_upstream.py
@@ -19,8 +21,8 @@ def generate_chaining_file(length):
         references.add(name)
         with open("ACR_v_ACR_test.tsv", "a") as file:
             file.write(f"{name}\t{name2}\t{random.randint(2, 10)}\t{random.randint(2, 10)}\n")
-        with open("ACR_v_rand_test.tsv", "a") as file:
-            file.write(f"{name}\t{random_name + "_rand"}\t{random.randint(2, 10)}\t{random.randint(2, 10)}\n")
+        #with open("ACR_v_rand_test.tsv", "a") as file:
+            #file.write(f"{name}\t{random_name}_rand\t{random.randint(2, 10)}\t{random.randint(2, 10)}\n")
     return references
 
 
@@ -31,5 +33,9 @@ def random_ACR_name():
     return name
 
 # references = generate_chaining_file(20)
-dicts = create_dicts("ACR_v_ACR_test.tsv", "ACR_v_rand_test.tsv", 20)
-output_score_freq(dicts[0], dicts[1], ".", lambda lst: sum(lst) / len(lst), "avg")
+#dicts = create_dicts("ACR_v_ACR_test.tsv", "ACR_v_rand_test.tsv", 20)
+#output_score_freq(dicts[0], dicts[1], ".", lambda lst: sum(lst) / len(lst), "avg")
+
+def final_chain_test():
+    get_motif_loc_dict("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/ACR_rand/")
+

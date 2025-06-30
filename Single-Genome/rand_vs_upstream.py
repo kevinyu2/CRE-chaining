@@ -1,6 +1,7 @@
 import random
 from collections import defaultdict
 from matplotlib import pyplot as plt
+import time
 
 '''
 Driver function.
@@ -15,6 +16,7 @@ Returns a second dictionary with every random region and the list of chaining sc
 with all reference ACRs.
 '''
 def create_dicts(all_ACR_file, ACR_rand_file, reference_size):
+    start_time = time.time()
     #For every non-reference ACR, this dictionary contains a list of scores of that ACR
     #chained with every reference ACR
     ACR_dict = defaultdict(list)
@@ -26,8 +28,11 @@ def create_dicts(all_ACR_file, ACR_rand_file, reference_size):
 
     #populate ACR dict (and choose random ACRs to be references)
     with open(all_ACR_file, "r") as ACR_file:
+            print("Before reading lines")
             lines = ACR_file.read().split("\n")
+            print(f"Read in ACR lines after {time.time() - start_time} seconds")
             random.shuffle(lines)
+            print(f"Shuffled lines after {time.time() - start_time} seconds")
             for line in lines:
                 line_arr = line.split("\t")
                 if len(line_arr) < 4:
@@ -48,6 +53,7 @@ def create_dicts(all_ACR_file, ACR_rand_file, reference_size):
                     ACR_ref.add(item1)
     #populate rand dict
     with open(ACR_rand_file) as rand_file:
+        print(f"Began rand dict after {time.time() - start_time} seconds")
         for line in rand_file:
             line_arr = line.split("\t")
             if len(line_arr) < 4:
@@ -107,37 +113,59 @@ File1 should contain ACR chaining with ACR data.
 File2 should contain ACR chaining with random data.
 '''
 def create_plots(file1, file2, title, x_label):
-    data1 = [0 for i in range(500)]
+    data1 = [0 for i in range(200)]
+    ACR_count = 0
+    rand_count = 0
     with open(file1, "r") as file:
         for line in file:
             line_arr = line.split("\t")
             if len(line_arr) < 2:
                 continue
             index = round(float(line_arr[0]))
-            data1[index] = int(line_arr[1])
+            try:
+                data1[index] = int(line_arr[1])
+            except IndexError:
+                ACR_count += 1
             
-    data2 = [0 for i in range(500)]
+    data2 = [0 for i in range(200)]
     with open(file2, "r") as file:
         for line in file:
             line_arr = line.split("\t")
             if len(line_arr) < 2:
                 continue
             index = round(float(line_arr[0]))
-            data2[index] = int(line_arr[1])
+            try:
+                data2[index] = int(line_arr[1])
+            except IndexError:
+                rand_count += 1
     
     max_axis = max(max(data1), max(data2))
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-    axes[0].bar(range(max_axis), data1, color='blue')
+    axes[0].bar(range(200), data1, color='blue')
     axes[0].set_title("ACRs chained with ACRs")
     axes[0].set_ylabel("Frequency")
     axes[0].set_xlabel(x_label)
 
-    axes[1].bar(range(max_axis), data2, color='green')
+    axes[1].bar(range(200), data2, color='green')
     axes[1].set_title("ACRs chained with random regions")
     axes[1].set_ylabel("Frequency")
     axes[1].set_xlabel(x_label)
 
     plt.suptitle(title)
     plt.tight_layout()
-    plt.savefig(f"/home/mwarr/{title.replace(" ", "_").lower()}.png")
+    file_name = title.replace(" ", "_")
+    plt.savefig(f"/home/mwarr/{file_name}.png")
+    print(f"ACR outliers: {ACR_count}")
+    print(f"random outliers: {rand_count}")
+
+if __name__ == "__main__":
+    dicts = create_dicts("/home/mwarr/Data/One_Genome/Chaining_one_local.tsv", "/home/mwarr/Data/Chaining_one_rand_local.tsv", 15000)
+    print(len(dicts[0]))
+    print(len(dicts[1]))
+    # output_all_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome")
+    # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", max, "max")
+    # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", lambda lst: sum(lst) / float(len(lst)), "avg")
+    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_all_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_all_freq.tsv", "All Chaining Scores", "Score")
+    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_avg_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_avg_freq.tsv", "Average Chaining Score", "Average Score")
+    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_max_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_max_freq.tsv", "Highest Chaining Score", "Max Score")

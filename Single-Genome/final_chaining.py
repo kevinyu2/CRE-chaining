@@ -43,6 +43,7 @@ def chunkify(lst, n):
 
 # Takes in an xstreme folder     
 # Gets motif locations
+# Note: If there are random regions, make sure the fimo folders are in the form 'fimo_out_rand_#'
 def get_motif_loc_dict(data_dir) :
     # Holds where each motif is located {MOTIF: {acr: [loc, ..., loc] acr:[loc, ..., loc]}}
     motif_loc_dict = defaultdict(lambda: defaultdict(list))
@@ -63,8 +64,15 @@ def get_motif_loc_dict(data_dir) :
                 # The file ends tsv info early
                 if len(line_arr) < 5: 
                     break
-                if int(line_arr[3]) not in motif_loc_dict [line_arr[0].split('-')[1]][line_arr[2]] :
-                    motif_loc_dict[line_arr[0].split('-')[1]][line_arr[2]].append(int(line_arr[3]))
+                motif = line_arr[0].split('-')[-1]
+                acr = line_arr[2]
+                #append '_rand' to the location if this is a random region (i.e. "rand" is in fimo folder name)
+                fimo_arr = fimo_file.split("/")
+                if "rand" in fimo_arr[-2]:
+                    acr += "_rand"
+                if int(line_arr[3]) not in motif_loc_dict [motif][acr] :
+                    motif_loc_dict[motif][acr].append(int(line_arr[3]))
+    
     
     # Remove duplicates from repeated sequences (basically remove overlaps)
     for motif, single_motif_dict in motif_loc_dict.items() :
@@ -115,7 +123,11 @@ def get_motif_loc_dict_local(data_dir) :
 
 def init_anchor_array(total_anchors):
     global global_anchor_array, global_anchor_shm
-    global_anchor_shm = shared_memory.SharedMemory(create=True, size=total_anchors * 2 * 4, name = global_anchor_name)  # 2 ints per anchor, 4 bytes each
+    try:
+        global_anchor_shm = shared_memory.SharedMemory(create=True, size=total_anchors * 2 * 4, name = global_anchor_name)  # 2 ints per anchor, 4 bytes each
+    except Exception as e:
+        print(f"There was an error: {e}")
+        global_anchor_shm = shared_memory.SharedMemory(create=False, size=total_anchors * 2 * 4, name = global_anchor_name)  # 2 ints per anchor, 4 bytes each
     global_anchor_array = np.ndarray((total_anchors, 2), dtype=np.int32, buffer=global_anchor_shm.buf)
 
 def cleanup_anchor_array():
@@ -301,7 +313,8 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
                              
 # chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.tsv")
 
-chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "/home/mwarr/Data/Chaining_one_kmer.tsv", 1, -2000, -1000)
+if __name__ == "__main__":
+    chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/ACR-filter_rand/", "/home/mwarr/Data/Chaining_one_filter_rand_loc.tsv", 5, -2, -1)
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},

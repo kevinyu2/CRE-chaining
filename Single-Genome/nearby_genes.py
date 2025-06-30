@@ -4,9 +4,14 @@ import time
 '''
 Finds all the genes which have an ACR within <threshold> distance upstream
 of the gene and outputs the genes' positions and strands to a file
+input_file_path is the path to the file made by bedtools which gives tabular
+data connecting genes to ACRs.
+If get_all is set to false, we only take the first gene if an ACR is mapped to multiple
+genes.
 '''
-def genes_near_ACRs(input_file_path, output_dir, threshold):
+def genes_near_ACRs(input_file_path, output_dir, threshold, get_all):
     far_gene_count = 0
+    seen = set() #ACRs already seen
 
     with open(f"{output_dir}/genes_threshold_{threshold}.tsv", "w") as gene_file:
         gene_file.write("Chromosome\tStart\tStop\tStrand")
@@ -16,13 +21,20 @@ def genes_near_ACRs(input_file_path, output_dir, threshold):
             with open(input_file_path, "r") as input_file:
                 for line in input_file:
                     line_arr = line.split("\t")
+                    acr = f"{line_arr[0]}_{line_arr[1]}to{line_arr[2]}"
                     chromosome = line_arr[3]
                     gene_type = line_arr[5]
                     start = line_arr[6]
                     stop = line_arr[7]
                     strand = line_arr[9]
                     distance = abs(int(line_arr[-1]))
-                    
+
+                    if not get_all:
+                        if acr in seen:
+                            print(f"{acr} was seen multiple times")
+                            continue
+                        seen.add(acr)
+
                     if distance < threshold:
                         if gene_type == "gene":
                             gene_file.write(f"\n{chromosome}\t{start}\t{stop}\t{strand}")
@@ -33,6 +45,17 @@ def genes_near_ACRs(input_file_path, output_dir, threshold):
                     else:
                         far_gene_count += 1
     print(f"There were {far_gene_count} far genes with threshold {threshold}")
+
+'''
+Randomly chooses half of the genes from a file listing genes and outputs a new file.
+'''
+def choose_half(input_path, output_path):
+    with open(input_path, "r") as in_file:
+        with open(output_path, "w") as out_file:
+            lines = in_file.read().split("\n")
+            random.shuffle(lines)
+            for i in range(len(lines) // 2):
+                out_file.write(f"{lines[i]}\n")
 
 '''
 Creates a fasta file of the regions <region_length> base pairs upstream of the genes
@@ -84,6 +107,8 @@ def upstream_region_fasta(input_file, genome_file, output_dir, region_length, th
                 output.write(f"{sequence}\n")
                 if count % 1000 == 0:
                     print(f"Finished {count} sequences in {time.time() - start_time} seconds")
+
+
             
             
 def generate_test_files():
@@ -109,5 +134,10 @@ def generate_test_files():
             else:
                 output.write("\t-\n")
 
+
+
+
 #generate_test_files()
-upstream_region_fasta("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_2000.tsv", "/home/mwarr/Data/nearby_genes/tair10.fa", "./", 3000, 2000)          
+#genes_near_ACRs("/home/mwarr/Data/nearby_genes/bedtools_files/all_dACRs_nearby_genes_iu.bed", "/home/mwarr/Data/nearby_genes/gene_locations", 1000, False)
+upstream_region_fasta("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv", "/home/mwarr/Data/nearby_genes/tair10.fa", "/home/mwarr/Data/nearby_genes", 2000, "1000_half")          
+#choose_half("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000.tsv", "/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv")

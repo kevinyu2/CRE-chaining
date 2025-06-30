@@ -50,7 +50,6 @@ def get_motif_loc_dict(data_dir) :
                 #append '_rand' to the location if this is a random region
                 if "rand" in str(fimo_file):
                     acr += "_rand"
-                    print(acr)
                 motif_loc_dict[motif][acr].append(int(line_arr[3]))
     
     # Remove duplicates from repeated sequences (basically remove overlaps)
