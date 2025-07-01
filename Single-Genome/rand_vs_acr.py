@@ -4,6 +4,18 @@ from matplotlib import pyplot as plt
 import time
 
 '''
+Helper function. Takes in a file with a list of ACRs and creates a set
+'''
+def create_ref_set(input_path):
+    ref_set = set()
+    with open(input_path, "r") as file:
+        for line in file:
+            line = line.strip()
+            if line != "":
+                ref_set.add(line)
+    return ref_set
+
+'''
 Driver function.
 
 Takes in two files:
@@ -67,8 +79,65 @@ def create_dicts(all_ACR_file, ACR_rand_file, reference_size):
             elif item1 in ACR_ref: #item 1 is a reference
                 if item2[-4:] == "rand": #item 2 is random
                     rand_dict[item2].append(score)
+    print(f"Reference size: {len(ACR_ref)}")
     return (ACR_dict, rand_dict)
 
+'''
+Driver function
+Takes in a chaining file with all random regions and ACRs pairwise chained. Also takes in the
+set of "reference" ACRs, i.e the ACRs which should be chained against the random regions and other
+ACRs.
+Non_ref_num is the number of non-reference and random regions there should be
+'''
+def create_dicts_ref_set(chaining_file, reference_set, non_ref_num):
+    #For every non-reference ACR, this dictionary contains a list of scores of that ACR
+    #chained with every reference ACR
+    ACR_dict = defaultdict(list)
+    #For every random sequence, this dictionary contains a list of scores of that random sequence
+    #chained with every reference ACR
+    rand_dict = defaultdict(list)
+
+    with open(chaining_file, "r") as file:
+        for line in file:
+            line_arr = line.split("\t")
+            if len(line_arr) < 4:
+                continue
+            item1 = line_arr[0]
+            item2 = line_arr[1]
+            score = float(line_arr[2])
+            if item1[-4:] == "rand":
+                if item2 in reference_set:
+                    rand_dict[item1].append(score)
+            elif item1 in reference_set:
+                if item2[-4:] == "rand":
+                    rand_dict[item2].append(score)
+                elif item2 not in reference_set:
+                    ACR_dict[item2].append(score)
+            else:
+                if item2 in reference_set:
+                    ACR_dict[item1].append(score)
+
+
+    #Account for any reference ACRs which have chaining scores of 0 with some ACR / random region
+    for lst in ACR_dict.values():
+        missing_values = len(reference_set) - len(lst)
+        lst.extend([0 for _ in range(missing_values)])
+        assert(len(lst) == len(reference_set))
+    for lst in rand_dict.values():
+        missing_values = len(reference_set) - len(lst)
+        lst.extend([0 for _ in range(missing_values)])
+        assert(len(lst) == len(reference_set))
+    
+    #Account for any non-reference and random regions with chaining scores of 0 with every ref ACR
+    for i in range(len(ACR_dict), non_ref_num):
+        ACR_dict[f"unknown_{i}"].extend([0 for i in range(len(reference_set))])
+    assert(len(ACR_dict) == non_ref_num)
+    
+    for i in range(len(rand_dict), non_ref_num):
+        rand_dict[f"unknown_rand_{i}"].extend([0 for i in range(len(reference_set))])
+    assert(len(rand_dict) == non_ref_num)
+        
+    return(ACR_dict, rand_dict)
 
 def output_all_score_freq(ACR_dict, rand_dict, output_dir):
     ACR = {}
@@ -155,17 +224,18 @@ def create_plots(file1, file2, title, x_label):
     plt.suptitle(title)
     plt.tight_layout()
     file_name = title.replace(" ", "_")
-    plt.savefig(f"/home/mwarr/{file_name}.png")
+    plt.savefig(f"./{file_name}.png")
     print(f"ACR outliers: {ACR_count}")
     print(f"random outliers: {rand_count}")
 
 if __name__ == "__main__":
-    dicts = create_dicts("/home/mwarr/Data/One_Genome/Chaining_one_local.tsv", "/home/mwarr/Data/Chaining_one_rand_local.tsv", 15000)
-    print(len(dicts[0]))
-    print(len(dicts[1]))
-    # output_all_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome")
-    # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", max, "max")
-    # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", lambda lst: sum(lst) / float(len(lst)), "avg")
-    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_all_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_all_freq.tsv", "All Chaining Scores", "Score")
-    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_avg_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_avg_freq.tsv", "Average Chaining Score", "Average Score")
-    # create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_max_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_max_freq.tsv", "Highest Chaining Score", "Max Score")
+    ref_set = create_ref_set()
+    dicts = create_dicts_ref_set("/home/mwarr/Data/One_Genome/Chaining_one_rand_loc.tsv", ref_set, 15648)
+    print(f"Non reference ACRs: {len(dicts[0])}")
+    print(f"Random regions: {len(dicts[1])}")
+    output_all_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome")
+    output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", max, "max")
+    output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/One_Genome", lambda lst: sum(lst) / float(len(lst)), "avg")
+    create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_all_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_all_freq.tsv", "All Chaining Scores", "Score")
+    create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_avg_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_avg_freq.tsv", "Average Chaining Score", "Average Score")
+    create_plots("/home/mwarr/Data/One_Genome/ACR_vs_ACR_max_freq.tsv", "/home/mwarr/Data/One_Genome/rand_vs_ACR_max_freq.tsv", "Highest Chaining Score", "Max Score")

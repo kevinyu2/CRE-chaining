@@ -43,7 +43,6 @@ def chunkify(lst, n):
 
 # Takes in an xstreme folder     
 # Gets motif locations
-# Note: If there are random regions, make sure the fimo folders are in the form 'fimo_out_rand_#'
 def get_motif_loc_dict(data_dir) :
     # Holds where each motif is located {MOTIF: {acr: [loc, ..., loc] acr:[loc, ..., loc]}}
     motif_loc_dict = defaultdict(lambda: defaultdict(list))
@@ -66,10 +65,6 @@ def get_motif_loc_dict(data_dir) :
                     break
                 motif = line_arr[0].split('-')[-1]
                 acr = line_arr[2]
-                #append '_rand' to the location if this is a random region (i.e. "rand" is in fimo folder name)
-                fimo_arr = fimo_file.split("/")
-                if "rand" in fimo_arr[-2]:
-                    acr += "_rand"
                 if int(line_arr[3]) not in motif_loc_dict [motif][acr] :
                     motif_loc_dict[motif][acr].append(int(line_arr[3]))
     
@@ -314,7 +309,7 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
 # chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.tsv")
 
 if __name__ == "__main__":
-    chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/ACR-filter_rand/", "/home/mwarr/Data/Chaining_one_filter_rand_loc.tsv", 5, -2, -1)
+    chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/ACR_rand_fimo/", "/home/mwarr/Data/One_Genome/Chaining_one_acr_rand_glob.tsv")
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},
