@@ -1,5 +1,5 @@
 from pathlib import Path
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt #type: ignore
 
 def output_frequency_files(file_name, output_dir):
     chain_length = {}

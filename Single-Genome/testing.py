@@ -1,5 +1,6 @@
 import random
 from rand_vs_acr import *
+from alignment_rand_vs_acr import *
 import os
 import sys
 
@@ -146,7 +147,22 @@ def ref_set_filter_test():
     print(ref_set)
     print(len(ref_set))
 
-rand_v_acr_dict_filter()
+
+'''
+Testing alignment_rand_vs_acr
+'''
+
+def random_fasta(filename, length):
+    bases = ['A', 'C', 'T', 'G']
+    with open(filename, "w") as file:
+        for _ in range(length):
+            start = random.randint(100, 500)
+            file.write(f">Chr{random.randint(1, 5)}_{start}to{start+100}\n")
+            seq = ""
+            for i in range(100):
+                seq += bases[random.randint(0, 3)]
+            file.write(f"{seq}\n")
+        
 
 
 

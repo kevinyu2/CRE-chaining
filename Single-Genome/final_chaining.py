@@ -308,8 +308,10 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
                              
 # chain_global_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/xstreme/", "./Chaining_one_par_f.tsv")
 
+
 if __name__ == "__main__":
-    chain_local_driver("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/ACR_rand_fimo/", "/home/mwarr/Data/One_Genome/Chaining_one_acr_rand_loc.tsv", 5, -2, -1)
+    #Scores used for local: 5, -2, -1
+    chain_global_driver("/home/mwarr/one_genome/DAPv1_rand_fimo", "/home/mwarr/Data/One_Genome/Chaining_one_acr_rand_DAPv1_glob.tsv")
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},

@@ -1,5 +1,8 @@
 import random
 import time
+import sys
+sys.path.append("Additional_Files/")
+from random_regions import *
 
 '''
 Finds all the genes which have an ACR within <threshold> distance upstream
@@ -108,6 +111,15 @@ def upstream_region_fasta(input_file, genome_file, output_dir, region_length, th
                 if count % 1000 == 0:
                     print(f"Finished {count} sequences in {time.time() - start_time} seconds")
 
+'''
+Removes duplicates from the fasta file
+'''
+def filter_fasta(input_file, output_file):
+    dict = create_genome_dict(input_file)
+    with open(output_file, "w") as output:
+        for id, seq in dict.items():
+            output.write(f">{id}\n{seq}\n")
+
 
             
             
@@ -135,9 +147,9 @@ def generate_test_files():
                 output.write("\t-\n")
 
 
-
-
-#generate_test_files()
-#genes_near_ACRs("/home/mwarr/Data/nearby_genes/bedtools_files/all_dACRs_nearby_genes_iu.bed", "/home/mwarr/Data/nearby_genes/gene_locations", 1000, False)
-upstream_region_fasta("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv", "/home/mwarr/Data/nearby_genes/tair10.fa", "/home/mwarr/Data/nearby_genes", 2000, "1000_half")          
-#choose_half("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000.tsv", "/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv")
+if __name__ == "__main__":
+    filter_fasta("/home/mwarr/Data/nearby_genes/upstream_2000bp_thresh1000.fa", "/home/mwarr/Data/nearby_genes/upstream_filter.fa")
+    #generate_test_files()
+    #genes_near_ACRs("/home/mwarr/Data/nearby_genes/bedtools_files/all_dACRs_nearby_genes_iu.bed", "/home/mwarr/Data/nearby_genes/gene_locations", 1000, False)
+    #upstream_region_fasta("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv", "/home/mwarr/Data/nearby_genes/tair10.fa", "/home/mwarr/Data/nearby_genes", 2000, "1000_half")          
+    #choose_half("/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000.tsv", "/home/mwarr/Data/nearby_genes/gene_locations/genes_threshold_1000_half.tsv")

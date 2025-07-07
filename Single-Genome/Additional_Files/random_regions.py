@@ -2,6 +2,10 @@ import random
 from matplotlib import pyplot as plt
 import time
 
+'''
+Creates a dictionary where the keys are the chromosome identifiers
+for the genome and the values are the sequences for the given chromosome
+'''
 def create_genome_dict(genome_file):
     #create genome dict {chr: seq, chr: seq, ...}
     start_time = time.time()
