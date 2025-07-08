@@ -1,1 +1,0 @@
-# Create a file for each chromosome that lists the motifs in order 
