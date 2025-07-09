@@ -4,6 +4,7 @@ import time
 import math
 import sys
 from pathlib import Path
+from useful_functions import *
 
 
 def time_test():
@@ -17,30 +18,11 @@ def time_test():
     print("Beginning alignment")
     start_time = time.time()
     aligner = Align.PairwiseAligner(scoring="blastn")
-    aligner.mode = "local"
+    aligner.mode = "global"
     score = aligner.score(target, query)
     print(score, flush=True)
     print(time.time() - start_time)
 
-'''
-Creates a dictionary where the keys are the chromosome identifiers
-for the genome and the values are the sequences for the given chromosome
-'''
-def create_genome_dict(genome_file):
-    #create genome dict {chr: seq, chr: seq, ...}
-    genome_dict = {}
-    with open(genome_file) as genome:
-        chromosome = genome.readline().strip()
-        while chromosome:
-            chromosome = chromosome[1:]
-            seq = ""
-            line = genome.readline().strip()
-            while line != "" and line[0] != ">":
-                seq += line
-                line = genome.readline().strip()
-            genome_dict[chromosome] = seq
-            chromosome = line
-    return genome_dict
 
 '''
 Takes in a file with a list of regions and outputs a fasta file of those regions.
@@ -57,7 +39,7 @@ def make_acr_fasta(input_file, genome_dict, output_file):
                         stop = int(line[line.index("to") + 2 : line.index("_rand")])
                     stop = int(line[line.index("to") + 2 : ])
                     seq = genome_dict[chr][start - 1 : stop]
-                output.write(f">{line}\n{seq}\n")
+                output.write(f">{line.strip()}\n{seq.strip()}\n")
 
 '''
 Takes in a fasta file (input_file) and outputs <num_files> files to <output_dir>.
@@ -98,6 +80,12 @@ def output_align(input_file, ref_file, output_file):
     #pairwise align
     for id2, seq2 in input_dict.items():
         for id1, seq1 in ref_dict.items():
+            for ch in seq1:
+                if ch != "A" and ch != "C" and ch != "T" and ch != "G":
+                    print("Found one!!!", ch)
+            for ch in seq2:
+                if ch != "A" and ch != "C" and ch != "T" and ch != "G":
+                    print("Found one!!!", ch)
             score = aligner.score(seq1, seq2)
             output.append((id1, id2, score))
 
@@ -132,4 +120,5 @@ def adjust_scores(adjustment, input_dir):
 
 
 if __name__ == "__main__":
-    output_align(sys.argv[1], "/home/mwarr/Data/alignment/seta.fa", sys.argv[2])
+    output_align(sys.argv[1], sys.argv[2], sys.argv[3])
+    #split_fasta("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/seta_90.fa", "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/seta_temp", 50, 28165)

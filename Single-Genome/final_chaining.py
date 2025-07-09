@@ -311,7 +311,8 @@ def chain_local_driver(input_dir, out_file, match, mismatch, gap) :
 
 if __name__ == "__main__":
     #Scores used for local: 5, -2, -1
-    chain_global_driver("/home/mwarr/one_genome/DAPv1_rand_fimo", "/home/mwarr/Data/One_Genome/Chaining_one_acr_rand_DAPv1_glob.tsv")
+    chain_global_driver("/home/mwarr/one_genome/PBM_rand_exp2_fimo", "/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_pbm_one_acr_rand_10-90_glob.tsv")
+    chain_local_driver("/home/mwarr/one_genome/PBM_rand_exp2_fimo", "/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_pbm_one_acr_rand_10-90_loc.tsv", 5, -2, -1)
 
 # motif_l_dict = {'ABC' : {"a" : [3, 4, 12], "b" : [6], "c" : [10]},
 #                 'BCD' : {"a" : [5], "c" : [6], "d" : [12]},

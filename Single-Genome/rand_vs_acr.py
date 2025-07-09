@@ -5,30 +5,8 @@ from pathlib import Path
 import os
 import time
 import numpy as np #type:ignore
+from useful_functions import *
 
-'''
-Helper function. Returns the length of an ACR in the format Chr#_#####to#####
-'''
-def get_length(item):
-    start = int(item[item.index("_") + 1 : item.index("to")])
-    if "rand" in item:
-        end = int(item[item.index("to") + 2 : item.index("_rand")])
-    else:
-        end = int(item[item.index("to") + 2 : ])
-    length = abs(end - start) + 1
-    return length
-
-'''
-Helper function. Takes in a file with a list of ACRs and creates a set
-'''
-def create_ref_set(input_path):
-    ref_set = set()
-    with open(input_path, "r") as file:
-        for line in file:
-            line = line.strip()
-            if line != "":
-                ref_set.add(line)
-    return ref_set
 
 '''
 Takes in a file with a list of ACRs and creates a set. Only includes ACRs with lengths between
@@ -71,9 +49,10 @@ def create_dicts(chaining_file, reference_set, non_ref_num, low=None, high=None)
             item2 = line_arr[1]
             score = float(line_arr[2])
 
-            if low != None: #skip if outside the bounds for the length
+            if low != None: 
                 len1 = get_length(item1)
                 len2 = get_length(item2)
+                #skip if outside the bounds for the length
                 if len1 < low or len1 > high:
                     continue
                 if len2 < low or len2 > high:
@@ -156,67 +135,8 @@ def output_score_freq(ACR_dict, rand_dict, output_dir, list_op, op_name):
             file.write(f"{score}\t{rand[score]}\n")
 
 '''
-Reads frequencies from files and creates two side-by-side plots.
-File1 should contain ACR chaining with ACR data.
-File2 should contain ACR chaining with random data.
+Gets the average chaining score from a file with the frequencies of chaining scores
 '''
-def create_plots(file1, file2, title, x_label, max_index, min_index=0):
-    data1 = [0 for i in range((max_index - min_index) + 1)]
-    acr_outliers = 0
-    rand_outliers = 0
-
-    with open(file1, "r") as file:
-        for line in file:
-            line_arr = line.split("\t")
-            if len(line_arr) < 2:
-                continue
-            score = round(float(line_arr[0]))
-            freq = int(line_arr[1])
-            try:
-                data1[score-min_index] += freq
-            except IndexError:
-                acr_outliers += freq
-
-    data2 = [0 for i in range((max_index - min_index) + 1)]
-    with open(file2, "r") as file:
-        for line in file:
-            line_arr = line.split("\t")
-            if len(line_arr) < 2:
-                continue
-            score = round(float(line_arr[0]))
-            freq = int(line_arr[1])
-            try:
-                data2[score-min_index] += freq
-            except IndexError:
-                rand_outliers += freq
-
-    try:
-        assert(sum(data1) + acr_outliers == sum(data2) + rand_outliers)
-    except:
-        print(sum(data1) + acr_outliers)
-        print(sum(data2) + rand_outliers)
-        raise
-
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True, sharex=True)
-
-    axes[0].bar(range(min_index, max_index+1), data1, color='blue')
-    axes[0].set_title("ACRs aligned with ACRs")
-    axes[0].set_ylabel("Frequency")
-    axes[0].set_xlabel(x_label)
-
-    axes[1].bar(range(min_index, max_index+1), data2, color='green')
-    axes[1].set_title("ACRs aligned with random regions")
-    axes[1].set_ylabel("Frequency")
-    axes[1].set_xlabel(x_label)
-
-    #plt.axis('equal')
-    plt.suptitle(title)
-    plt.tight_layout()
-    file_name = title.replace(" ", "_")
-    plt.savefig(f"/home/mwarr/{file_name}.png")
-    print(f"ACR outliers {acr_outliers}")
-    print(f"Random outliers {rand_outliers}")
-
 def get_average(file_path):
     sum = 0
     num_regions = 0
@@ -229,6 +149,11 @@ def get_average(file_path):
             num_regions += int(line_arr[1])
     return sum / num_regions
 
+'''
+Creates a bar graph showing the average ACR v ACR score and ACR v random score,
+as well as the average max ACR v ACR score and ACR v random score. Shows both
+local and global chaining score averages.
+'''
 def create_average_graph(input_dir_base):
     options = ["all", "max"]
     chain_type = ["local", "global"]
@@ -252,6 +177,11 @@ def create_average_graph(input_dir_base):
     plt.legend()
     plt.savefig("/home/mwarr/averages_all-sizes.png")
 
+'''
+Creates a graph similar to the function above (create_average_graph). However, it will
+plot local and global on different subplots so that the axes and scale can be different 
+for each.
+'''
 def create_average_subgraphs(input_dir_base):
     options = ["all", "max"]
     chain_type = ["local", "global"]
@@ -267,30 +197,64 @@ def create_average_subgraphs(input_dir_base):
     x = np.arange(2)
 
     
-    axes[0].bar(x - width / 2, ACR_data[2:], label="ACR", width=width)
-    axes[0].bar(x + width / 2, rand_data[2:], label="Rand", width=width)
-    axes[0].set_title("Global Alignment Scores")
+    axes[0].bar(x - width / 2, ACR_data[0:2], label="ACR", width=width)
+    axes[0].bar(x + width / 2, rand_data[0:2], label="Rand", width=width)
+    axes[0].set_title("Local Alignment Scores")
     plt.sca(axes[0])
     plt.xlabel("Data Averaged and Chain Type")
     plt.ylabel("Average Score")
     plt.xticks(x, labels[0:2])
-    plt.ylim(11000, 12500)
     plt.legend()
 
-    axes[1].bar(x - width / 2, ACR_data[0:2], label="ACR", width=width)
-    axes[1].bar(x + width / 2, rand_data[0:2], label="Rand", width=width)
-    axes[1].set_title("Local Alignment Scores")
+    axes[1].bar(x - width / 2, ACR_data[2:4], label="ACR", width=width)
+    axes[1].bar(x + width / 2, rand_data[2:4], label="Rand", width=width)
+    axes[1].set_title("Global Alignment Scores")
     plt.sca(axes[1])
     plt.xlabel("Data Averaged and Chain Type")
-    plt.ylabel("Average Score")
-    plt.xticks(x, labels[2:])
-
-    
+    plt.xticks(x, labels[2:4])
+    plt.ylim(11000, 12500)
     plt.legend()
-    plt.savefig("/home/mwarr/averages_all-sizes.png")
+    
+    fig.suptitle("Comparison of Alignment Score Averages")
+    plt.savefig("/home/mwarr/averages_alignment.png")
 
+def average_graph_top(input_dir_base, top_num):
+    acr_data = []
+    rand_data = []
+    labels = ["Max", "2nd-Highest", "3rd-Highest"]
+    for i in range(1, top_num + 1):
+        if i > 3:
+            labels.append(f"{i}th-Highest")
+        acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_{i}-highest_freq.tsv"))
+        rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_{i}-highest_freq.tsv"))
+    labels.append(f"Top-{top_num}-Highest")
+    acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_top-5-avg_freq.tsv"))
+    rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_top-5-avg_freq.tsv"))
+    print(acr_data)
+    print(rand_data)
+    width = .4
+    x = np.arange(len(labels))
+    plt.figure(figsize=(15, 6))
+    plt.bar(x - width / 2, acr_data, label="ACRs", width=width)
+    plt.bar(x + width / 2, rand_data, label="Random", width=width)
+    plt.xticks(x, labels)
+    plt.title("Comparison of ACR Chaining Score Averages Local")
+    plt.xlabel("Data Averaged")
+    plt.ylabel("Average Score")
+    plt.legend()
+    plt.savefig("/home/mwarr/chainging_exp2_top10_loc_original.png")
 
-def driver_all():
+'''
+Function to be passed into output_score_freq as <list_op>
+'''
+def top_avg(lst):
+    lst.sort(reverse=True)
+    sum = 0
+    for i in range(10):
+        sum += lst[i]
+    return sum / 10
+
+def driver_all_summary():
     # ref_set = create_ref_set("/home/mwarr/Data/seta.txt")
     # dicts = create_dicts("/home/mwarr/Data/alignment/global/alignment_scores_glob.tsv", ref_set, 15648)
     # print(f"Non reference ACRs: {len(dicts[0])}")
@@ -298,11 +262,11 @@ def driver_all():
     # output_all_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/alignment/global")
     # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/alignment/global", max, "max")
     # output_score_freq(dicts[0], dicts[1], "/home/mwarr/Data/alignment/global", lambda lst: sum(lst) / float(len(lst)), "avg")
-    create_plots("/home/mwarr/Data/alignment/global/ACR_vs_ACR_all_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_all_freq.tsv", "All Global Alignment Scores", "Score", 11000, 10000)
-    create_plots("/home/mwarr/Data/alignment/global/ACR_vs_ACR_avg_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_avg_freq.tsv", "Average Global Alignment Score", "Average Score", 11000, 10000)
-    create_plots("/home/mwarr/Data/alignment/global/ACR_vs_ACR_max_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_max_freq.tsv", "Max Global Alignment Score", "Max Score", 11000, 10000)
+    create_histograms("/home/mwarr/Data/alignment/global/ACR_vs_ACR_all_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_all_freq.tsv", "All Global Alignment Scores", "Score", 11000, 10000)
+    create_histograms("/home/mwarr/Data/alignment/global/ACR_vs_ACR_avg_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_avg_freq.tsv", "Average Global Alignment Score", "Average Score", 11000, 10000)
+    create_histograms("/home/mwarr/Data/alignment/global/ACR_vs_ACR_max_freq.tsv", "/home/mwarr/Data/alignment/global/rand_vs_ACR_max_freq.tsv", "Max Global Alignment Score", "Max Score", 11000, 10000)
 
-def driver_filter():
+def driver_filter_summary():
     for i in range(650, 2050, 100):
         start_time = time.time()
         dir = f"/home/mwarr/Data/One_Genome/local_freq_{i}-{i+100}"
@@ -313,11 +277,32 @@ def driver_filter():
         output_all_score_freq(dicts[0], dicts[1], dir)
         output_score_freq(dicts[0], dicts[1], dir, max, "max")
         output_score_freq(dicts[0], dicts[1], dir, lambda lst: sum(lst) / float(len(lst)), "avg")
-        create_plots(f"{dir}/ACR_vs_ACR_all_freq.tsv", f"{dir}/rand_vs_ACR_all_freq.tsv", f"All Local Chaining Scores Lengths {i}-{i+100}", "Score")
-        create_plots(f"{dir}/ACR_vs_ACR_avg_freq.tsv", f"{dir}/rand_vs_ACR_avg_freq.tsv", f"Average Local Chaining Score Lengths {i}-{i+100}", "Average Score")
-        create_plots(f"{dir}/ACR_vs_ACR_max_freq.tsv", f"{dir}/rand_vs_ACR_max_freq.tsv", f"Highest Local Chaining Score Lengths {i}-{i+100}", "Max Score")
+        create_histograms(f"{dir}/ACR_vs_ACR_all_freq.tsv", f"{dir}/rand_vs_ACR_all_freq.tsv", f"All Local Chaining Scores Lengths {i}-{i+100}", "Score")
+        create_histograms(f"{dir}/ACR_vs_ACR_avg_freq.tsv", f"{dir}/rand_vs_ACR_avg_freq.tsv", f"Average Local Chaining Score Lengths {i}-{i+100}", "Average Score")
+        create_histograms(f"{dir}/ACR_vs_ACR_max_freq.tsv", f"{dir}/rand_vs_ACR_max_freq.tsv", f"Highest Local Chaining Score Lengths {i}-{i+100}", "Max Score")
         print(f"Finished {i}-{i+100} in {time.time() - start_time} seconds", flush=True)
+
+def driver_all_top():
+    ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
+    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_one_acr_rand_10-90_loc.tsv", ref_set, 3130)
+    print(f"Non reference ACRs: {len(dicts[0])}")
+    print(f"Random regions: {len(dicts[1])}")
+    base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/loc_freq"
+    for i in range(6, 11):
+        output_score_freq(dicts[0], dicts[1], base_dir, lambda lst: sorted(lst)[-(i)], f"{i}-highest")
+        
+    # for i in range(6, 11):
+    #     create_histograms(f"{base_dir}/ACR_vs_ACR_{i}-highest_freq.tsv", f"{base_dir}/rand_vs_ACR_{i}-highest_freq.tsv", f"{i}-highest Global", 
+    #                  f"{i}-highest Chaining Score", 100)
+        
+    output_score_freq(dicts[0], dicts[1], base_dir, top_avg, f"top-10-avg")
+    average_graph_top("/home/mwarr/Data/One_Genome/experiment2_10-90/loc_freq", 10)
+    # create_histograms(f"{base_dir}/ACR_vs_ACR_top-10-avg_freq.tsv", f"{base_dir}/rand_vs_ACR_top-10-avg_freq.tsv", f"Top 10 Averaged Chaining Score Frequencies Global", 
+    #                  "Average Over Top 10 Chaining Scores", 100)
+
+
+
 
 
 if __name__ == "__main__":
-    create_average_subgraphs("/home/mwarr/Data/alignment")
+    driver_all_top()

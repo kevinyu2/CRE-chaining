@@ -26,11 +26,9 @@ def create_genome_dict(genome_file):
 
 
 '''
-Finds <num_regions> random regions of size <region_size> in a genome and outputs 
-a fasta file.
+Finds <num_regions> random regions of size between <low_bound> and <up_bound> (inclusive)
+in a genome and outputs a fasta file.
 Genome file should be a fasta file of the entire genome (each entry is a chromosome)
-up_bound is the upper bound for the region size.
-low_bound is the lower bound for the region size
 '''
 def random_region_fasta(genome_file, num_regions, low_bound, up_bound, output_file):
     genome_dict = create_genome_dict(genome_file)
@@ -55,7 +53,12 @@ def random_region_fasta(genome_file, num_regions, low_bound, up_bound, output_fi
             if i != num_regions - 1:
                 output.write("\n")
 
-def random_region_size_file(genome_file, size_file, output_file):
+'''
+Outputs a fasta file of random regions, where the sizes of the regions match 
+the sizes of the regions in <reference_file>. <reference_file> should be a list of
+regions in the form chr#_<start>to<end>.
+'''
+def random_region_match_sizes(genome_file, reference_file, output_file):
     print("Began program", flush=True)
     start_time = time.time()
     genome_dict = create_genome_dict(genome_file)
@@ -63,12 +66,13 @@ def random_region_size_file(genome_file, size_file, output_file):
     sizes = []
     count = 0
 
-    with open(size_file, "r") as input:
+    with open(reference_file, "r") as input:
         count += 1
         if count % 500 == 0:
             print(f"Finished {count} sequences after {time.time() - start_time} seconds", flush=True)
         with open(output_file, "w") as output:
             for line in input:
+                #get the size
                 start = line[line.index("_") + 1 : line.index("to")]
                 end = line[line.index("to") + 2 : ]
                 region_size = abs(int(end) - int(start)) + 1
@@ -95,7 +99,9 @@ def random_region_size_file(genome_file, size_file, output_file):
 
 
 if __name__ == "__main__":
-    genome_file = "/home/mwarr/Data/random_regions/tair10.fa"
-    output_file = "/home/mwarr/Data/random_regions/rand_match-size_b.fa"
-    size_file = "/home/mwarr/Data/setb.txt"
-    random_region_size_file(genome_file, size_file, output_file)
+    genome_file = "/home/mwarr/Data/One_Genome/random_regions/tair10.fa"
+    output_file = "/home/mwarr/Data/One_Genome/random_regions/setb_10_match_sizes.fa"
+    size_file = "/home/mwarr/Data/One_Genome/experiment2_10-90/setb_10.txt"
+
+    random_region_match_sizes(genome_file, size_file, output_file)
+
