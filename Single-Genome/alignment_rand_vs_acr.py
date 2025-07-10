@@ -69,7 +69,7 @@ every sequence in <input_file> with every sequence in <ref_file> to <output_file
 '''
 def output_align(input_file, ref_file, output_file):
     aligner = Align.PairwiseAligner(scoring="blastn")
-    aligner.mode = "local"
+    aligner.mode = "global"
     
     #read in files and create dictionaries
     ref_dict = create_genome_dict(ref_file)

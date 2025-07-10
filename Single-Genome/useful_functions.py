@@ -106,12 +106,12 @@ def create_histograms(file1, file2, title, x_label, max_index, equal_freq=False,
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True, sharex=True)
 
     axes[0].bar(range(min_index, max_index+1), data1, color='blue')
-    axes[0].set_title("ACRs aligned with ACRs")
+    axes[0].set_title("ACRs chained with ACRs")
     axes[0].set_ylabel("Frequency")
     axes[0].set_xlabel(x_label)
 
     axes[1].bar(range(min_index, max_index+1), data2, color='green')
-    axes[1].set_title("ACRs aligned with random regions")
+    axes[1].set_title("ACRs chained with random regions")
     axes[1].set_ylabel("Frequency")
     axes[1].set_xlabel(x_label)
 
@@ -123,3 +123,9 @@ def create_histograms(file1, file2, title, x_label, max_index, equal_freq=False,
     plt.savefig(f"/home/mwarr/{file_name}.png")
     print(f"ACR outliers {acr_outliers}")
     print(f"Random outliers {rand_outliers}")
+
+
+if __name__ == "__main__":
+    base_dir = "/home/mwarr/Data/One_Genome/other_features/counts"
+    create_histograms(f"{base_dir}/ACR_vs_ACR_count_5-highest_freq.tsv", f"{base_dir}/rand_vs_ACR_count_5-highest_freq.tsv",
+                      "Frequency of Count of 5th Highest Chain Scores", "Count of 5th Highest Chain Scores", 200, True)

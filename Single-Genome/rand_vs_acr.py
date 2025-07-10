@@ -121,10 +121,18 @@ def output_score_freq(ACR_dict, rand_dict, output_dir, list_op, op_name):
     rand = {}
     for score_list in ACR_dict.values():
         value = list_op(score_list)
-        ACR[value] = ACR.get(value, 0) + 1
+        if type(value) == list:
+            for val in value:
+                ACR[val] = ACR.get(val, 0) + 1
+        else:
+            ACR[value] = ACR.get(value, 0) + 1
     for score_list in rand_dict.values():
         value = list_op(score_list)
-        rand[value] = rand.get(value, 0) + 1
+        if type(value) == list:
+            for val in value:
+                rand[val] = rand.get(val, 0) + 1
+        else:
+            rand[value] = rand.get(value, 0) + 1
     
     with open(f"{output_dir}/ACR_vs_ACR_{op_name}_freq.tsv", "w") as file:
         for score in ACR:
@@ -137,7 +145,7 @@ def output_score_freq(ACR_dict, rand_dict, output_dir, list_op, op_name):
 '''
 Gets the average chaining score from a file with the frequencies of chaining scores
 '''
-def get_average(file_path):
+def get_average(file_path, exclude_zero=False):
     sum = 0
     num_regions = 0
     with open(file_path) as file:
@@ -145,6 +153,8 @@ def get_average(file_path):
             line_arr = line.split("\t")
             if len(line_arr) < 2:
                 break
+            if exclude_zero and float(line_arr[0]) == 0:
+                continue
             sum += float(line_arr[0]) * int(line_arr[1])
             num_regions += int(line_arr[1])
     return sum / num_regions
@@ -227,9 +237,9 @@ def average_graph_top(input_dir_base, top_num):
             labels.append(f"{i}th-Highest")
         acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_{i}-highest_freq.tsv"))
         rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_{i}-highest_freq.tsv"))
-    labels.append(f"Top-{top_num}-Highest")
-    acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_top-5-avg_freq.tsv"))
-    rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_top-5-avg_freq.tsv"))
+    # labels.append(f"Top-{top_num}-Highest")
+    # acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_top-5-avg_freq.tsv"))
+    # rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_top-5-avg_freq.tsv"))
     print(acr_data)
     print(rand_data)
     width = .4
@@ -238,11 +248,11 @@ def average_graph_top(input_dir_base, top_num):
     plt.bar(x - width / 2, acr_data, label="ACRs", width=width)
     plt.bar(x + width / 2, rand_data, label="Random", width=width)
     plt.xticks(x, labels)
-    plt.title("Comparison of ACR Chaining Score Averages Local")
+    plt.title("Average Top Alignment Scores, Local")
     plt.xlabel("Data Averaged")
     plt.ylabel("Average Score")
     plt.legend()
-    plt.savefig("/home/mwarr/chainging_exp2_top10_loc_original.png")
+    plt.savefig("/home/mwarr/align_exp2_loc_original.png")
 
 '''
 Function to be passed into output_score_freq as <list_op>
@@ -284,24 +294,21 @@ def driver_filter_summary():
 
 def driver_all_top():
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
-    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_one_acr_rand_10-90_loc.tsv", ref_set, 3130)
+    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/alignment_top5_local.tsv", ref_set, 3130)
     print(f"Non reference ACRs: {len(dicts[0])}")
     print(f"Random regions: {len(dicts[1])}")
-    base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/loc_freq"
-    for i in range(6, 11):
+    base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/local_freq"
+    for i in range(1, 6):
         output_score_freq(dicts[0], dicts[1], base_dir, lambda lst: sorted(lst)[-(i)], f"{i}-highest")
         
-    # for i in range(6, 11):
-    #     create_histograms(f"{base_dir}/ACR_vs_ACR_{i}-highest_freq.tsv", f"{base_dir}/rand_vs_ACR_{i}-highest_freq.tsv", f"{i}-highest Global", 
+    # for i in range(1, 6):
+    #     create_histograms(f"{base_dir}/ACR_vs_ACR_{i}-highest_freq.tsv", f"{base_dir}/rand_vs_ACR_{i}-highest_freq.tsv", f"{i}-highest Local", 
     #                  f"{i}-highest Chaining Score", 100)
         
-    output_score_freq(dicts[0], dicts[1], base_dir, top_avg, f"top-10-avg")
-    average_graph_top("/home/mwarr/Data/One_Genome/experiment2_10-90/loc_freq", 10)
-    # create_histograms(f"{base_dir}/ACR_vs_ACR_top-10-avg_freq.tsv", f"{base_dir}/rand_vs_ACR_top-10-avg_freq.tsv", f"Top 10 Averaged Chaining Score Frequencies Global", 
+    # output_score_freq(dicts[0], dicts[1], base_dir, top_avg, f"top-5-avg")
+    average_graph_top("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/local_freq", 5)
+    # create_histograms(f"{base_dir}/ACR_vs_ACR_top-10-avg_freq.tsv", f"{base_dir}/rand_vs_ACR_top-5-avg_freq.tsv", f"Top 10 Averaged Chaining Score Frequencies Global", 
     #                  "Average Over Top 10 Chaining Scores", 100)
-
-
-
 
 
 if __name__ == "__main__":
