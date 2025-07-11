@@ -80,12 +80,6 @@ def output_align(input_file, ref_file, output_file):
     #pairwise align
     for id2, seq2 in input_dict.items():
         for id1, seq1 in ref_dict.items():
-            for ch in seq1:
-                if ch != "A" and ch != "C" and ch != "T" and ch != "G":
-                    print("Found one!!!", ch)
-            for ch in seq2:
-                if ch != "A" and ch != "C" and ch != "T" and ch != "G":
-                    print("Found one!!!", ch)
             score = aligner.score(seq1, seq2)
             output.append((id1, id2, score))
 

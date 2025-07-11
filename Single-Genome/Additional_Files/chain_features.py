@@ -89,6 +89,48 @@ def list_op_len_ref(chain_score):
         return 0
     return len_ref
 
+def get_features_combine_score(lst):
+    chain_len_5 = sorted(lst)[-5][0]
+    lst_5th = [] #A list of all tuples where score is the 5th highest score
+    for item in lst:
+        if item[0] == chain_len_5:
+            lst_5th.append(item)
+    chain_num = len(lst_5th)
+    anchor_lst = [item[1] for item in lst_5th]
+    ref_len_lst = [item[2] for item in lst_5th]
+    anchor_num = min(anchor_lst)
+    ref_len_num = min(ref_len_lst)
+    return {"chain_len" : chain_len_5, "chain_num": chain_num, "anchor_num": anchor_num,
+            "ref_len_num": ref_len_num}
+
+def list_op_combine(chain_max, chain_num_max, anchor_max, ref_num_max, chain_frac):
+    def list_op(lst):
+        dict = get_features_combine_score(lst)
+        print(dict)
+
+        chain_len_5 = float(dict["chain_len"]) / chain_max #higher = better
+        chain_num = 1 - (float(dict["chain_num"]) / chain_num_max) #lower = better
+        anchor_num = 1 - (float(dict["anchor_num"]) / anchor_max) #lower = better
+        ref_len_num = 1 - (float(dict["ref_len_num"]) / ref_num_max) #lower = better
+
+        other_frac = (1-chain_frac) / 3
+        return chain_frac*chain_len_5 + other_frac*chain_num + other_frac*anchor_num + other_frac*ref_len_num
+    return list_op
+
+def get_max_dict(ACR_dict, rand_dict):
+    max_dict = {"chain_len" : 0, "chain_num": 0, "anchor_num": 0, "ref_len_num": 0}
+    for lst in ACR_dict.values():
+        dict = get_features_combine_score(lst)
+        for feature, val in dict.items():
+            if max_dict[feature] < val:
+                max_dict[feature] = val
+    for lst in rand_dict.values():
+        dict = get_features_combine_score(lst)
+        for feature, val in dict.items():
+            if max_dict[feature] < val:  
+                max_dict[feature] = val
+    return max_dict
+
 def non_ref_len_freq(ACR_dict, rand_dict, output_dir, op_name):
     ACR = {}
     rand = {}
@@ -122,16 +164,14 @@ def average_graph_constant_chain(input_dir_base, op_name, ylabel, title):
     plt.savefig(f"/home/mwarr/chainging_exp2_{op_name}_glob_original.png")
 
 def driver():
-    base = "/home/mwarr/Data/One_Genome/other_features"
-    # ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
-    # dicts = create_dicts_mult_feat("/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_one_acr_rand_10-90_glob.tsv", ref_set)
-    # for i in range(2, 20):
-    #     output_score_freq(dicts[0], dicts[1], base, list_op_anchor(i), f"anchor_num_{i}")
-    #     output_score_freq(dicts[0], dicts[1], base, list_op_len_ref(i), f"ref_len_{i}") 
-    #     non_ref_len_freq(dicts[0], dicts[1], base, f"non-ref-len_{i}")   
+    base = "/home/mwarr/Data/One_Genome/other_features_glob/combine_score/chain_.25"
+    ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
+    dicts = create_dicts_mult_feat("/home/mwarr/Data/One_Genome/experiment2_10-90/Chaining_one_acr_rand_10-90_glob.tsv", ref_set)
+    max_dict = get_max_dict(dicts[0], dicts[1])
+    output_score_freq(dicts[0], dicts[1], base, list_op_combine(max_dict["chain_len"], max_dict["chain_num"], max_dict["anchor_num"], max_dict["ref_len_num"], .25), "combine")
     # average_graph_constant_chain(f"{base}/anchor_num", "anchor_num", "Average Number of Anchors", "Average Number of Anchors for a Given 5th-Highest Chain Length, Global")
     # average_graph_constant_chain(f"{base}/ref_len", "ref_len", "Average Reference ACR Length", "Average Reference ACR Length for a Given 5th-Highest Chain Length, Global")
-    average_graph_constant_chain(f"{base}/non-ref_len", "non-ref-len", "Average Test Region Length", "Average Test Region Length for a Given 5th-Highest Chain Length, Global")
+    #average_graph_constant_chain(f"{base}/non-ref_len", "non-ref-len", "Average Test Region Length", "Average Test Region Length for a Given 5th-Highest Chain Length, Global")
 
 if __name__ == "__main__":
     driver()

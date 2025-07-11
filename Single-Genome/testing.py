@@ -1,8 +1,11 @@
 import random
+import sys
 from rand_vs_acr import *
 from alignment_rand_vs_acr import *
+sys.path.append("./Additional_Files/")
+from chain_features import *
 import os
-import sys
+
 
 '''
 Testing rand_vs_acr.py
@@ -147,11 +150,6 @@ def ref_set_filter_test():
     print(ref_set)
     print(len(ref_set))
 
-
-'''
-Testing alignment_rand_vs_acr
-'''
-
 def random_fasta(filename, length):
     bases = ['A', 'C', 'T', 'G']
     with open(filename, "w") as file:
@@ -163,14 +161,59 @@ def random_fasta(filename, length):
                 seq += bases[random.randint(0, 3)]
             file.write(f"{seq}\n")
         
+'''
+Testing chain_features
+'''
 
+def max_dict_test():
+    dict1 = {}
+    dict2 = {}
+    for i in range(1):
+        lst1 = []
+        lst2 = []
+        for j in range(5):
+            tuple = (random.randint(0, 15), random.randint(0, 15), random.randint(0, 15))
+            lst1.append(tuple)
+            tuple = (random.randint(0, 15), random.randint(0, 15), random.randint(0, 15))
+            lst2.append(tuple)
+        dict1[i] = lst1
+        dict2[i] = lst2
+    max_dict = get_max_dict(dict1, dict2)
+    print(f"Max_dict: {max_dict}\n")
+    print(f"Dict1: {dict1}\n")
+    print(f"Dict2: {dict2}\n")
+    lst_op = list_op_combine(max_dict["chain_len"], max_dict["chain_num"], max_dict["anchor_num"], max_dict["ref_len_num"])
+    for lst in dict1.values():
+        print(f"Dict1 score: {lst_op(lst)}")
+    for lst in dict2.values():
+        print(f"Dict2 score: {lst_op(lst)}")
 
+def get_feature_combine_test():
+    lst = []
+    for i in range(5):
+        lst.append((random.randint(1, 20), random.randint(1, 20), random.randint(1, 20)))
+    test_dict = get_features_combine_score(lst)
+    chain, anchor, ref = zip(*lst)
+    anchor_num = 100
+    ref_len_num = 100
+    for ind, score in enumerate(chain):
+        if score == min(chain):
+            if anchor[ind] < anchor_num:
+                anchor_num = anchor[ind]
+            if ref[ind] < ref_len_num:
+                ref_len_num = ref[ind]
+    act_dict = {"chain_len" : min(chain), "chain_num": chain.count(min(chain)), "anchor_num": anchor_num,
+            "ref_len_num": ref_len_num}
+    
+    try:
+        assert(act_dict == test_dict)
+    except:
+        print(act_dict)
+        print(test_dict)
+        raise
 
-
-
-
-
-
+for i in range(100):
+    get_feature_combine_test()
 
 
 
