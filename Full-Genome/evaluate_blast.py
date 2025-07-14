@@ -2,13 +2,13 @@ from collections import defaultdict
 
 
 # Which set of ACRs was used and which set are we looking for
-ACRS_TO_FIND = '/home/mwarr/Data/setb.txt'
-ACRS_USED = '/home/mwarr/Data/seta.txt'
+ACRS_TO_FIND = '/home/mwarr/Data/setb_half.txt'
+ACRS_USED = '/home/mwarr/Data/seta_half.txt'
 FULL_GENOME = '/home/projects/msu_nsf_pangenomics/pgrp/data/arabidopsis/atacseq/tair10.fa'
 chrs_to_use = {'Chr1', 'Chr2', 'Chr3', 'Chr4', 'Chr5'}
 
 # Set to further give a score cutoff or e-value cutoff
-CUTOFF = 160
+CUTOFF = 120
 
 # CRE for the CRE version, NCBI for the NCBI blast version. The outputs are a bit different
 MODE = 'CRE'
@@ -163,5 +163,5 @@ def coverage(hits_file, full_chr_lengths, k) :
 #################################################################################
 
 fcl = get_full_chr_lengths()
-coverage('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/hits_ArabidopsisPBM.tsv', fcl, 0.01)
+coverage('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_hits/hits_RANDOM_DAPv1_cut.tsv', fcl, 0.01)
 

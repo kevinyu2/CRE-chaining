@@ -1,7 +1,14 @@
+# Get blast inputs given full motif location file (for full genome) for each acr
+# Use after FIMO on the full genome
+
 from collections import defaultdict
 import os
 from glob import glob
 import heapq
+
+# Leave as None if no cluster file
+# CLUSTER_FILE = '/home/mwarr/Data/DAPv1_clusters.txt'
+CLUSTER_FILE = None
 
 class Node:
     def __init__(self, start, stop, label):
@@ -75,8 +82,20 @@ def get_starts_and_stops(acr_set_file) :
 
 
 def get_motif_loc_dict(data_dir, acr_bsts) :
+
+    # If we have a cluster file, convert to that instead
+    if CLUSTER_FILE != None :
+        cluster_dict = {}
+        with open(CLUSTER_FILE, 'r') as cf :
+            for line in cf :
+                cluster_dict[line.split('\t')[0]] = line.split('\t')[1].rstrip()
+
+
     # Holds where each motif is located {acr: {motif: [loc, ..., loc], motif:[loc, ..., loc]}}
     motif_loc_dict = defaultdict(lambda: defaultdict(list))
+
+    # {(acr, motif, loc) : end}
+    motif_end_dict = {}
 
     print("Filling Motif Dict")
 
@@ -98,16 +117,20 @@ def get_motif_loc_dict(data_dir, acr_bsts) :
                 if node != None :
                     if node.stop >= int(line_arr[4]) :
                         acr = node.label
-                        if int(line_arr[3]) not in motif_loc_dict[acr][line_arr[0]] :
-                            motif_loc_dict[acr][line_arr[0]].append(int(line_arr[3]))
+                        motif = line_arr[0]
+                        if CLUSTER_FILE != None :
+                            motif = cluster_dict[motif]
+                        if int(line_arr[3]) not in motif_loc_dict[acr][motif] :
+                            motif_loc_dict[acr][motif].append(int(line_arr[3]))
+                            motif_end_dict[(acr, motif, int(line_arr[3]))] = int(line_arr[4])
     
     # Remove duplicates from repeated sequences (basically remove overlaps)
     for acr, single_acr_dict in motif_loc_dict.items() :
         for motif, loc_list in single_acr_dict.items() :
-            motif_len = len(motif)
             loc_list.sort()
             to_remove = set()
             for i in range(len(loc_list) - 1) :
+                motif_len = motif_end_dict[(acr, motif, loc_list[i])] - loc_list[i] 
                 if loc_list[i + 1] - loc_list[i] <= motif_len :
                     to_remove.add(loc_list[i])
             single_acr_dict[motif] = [x for x in loc_list if x not in to_remove]
@@ -145,8 +168,8 @@ def print_sequences(motif_loc_dict, outfile) :
             for motif_loc_pair in result_list :
                 out.write(f'{motif_loc_pair[1]}\n')
 
-acr_bsts = get_starts_and_stops('/home/mwarr/Data/seta.txt')
+acr_bsts = get_starts_and_stops('/home/mwarr/Data/seta_half.txt')
 
-mld = get_motif_loc_dict("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_ArabidopsisDAPv1/", acr_bsts)
+mld = get_motif_loc_dict("/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_whole_genome_results/fimo_full_xstreme/", acr_bsts)
 
-print_sequences(mld, '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/acr_motif_sequences_ArabidopsisDAPv1.txt')
+print_sequences(mld, '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_inputs/acr_xstreme.txt')

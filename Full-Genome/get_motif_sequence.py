@@ -1,4 +1,5 @@
 # Finds sequence of motifs to use in BLAST style search
+# Use after FIMO search
 
 from pathlib import Path
 from glob import glob
@@ -12,6 +13,11 @@ import heapq
 # How many base pairs to be considered a break
 BREAK_LENGTH = 3000
 
+# Leave as None if no cluster file
+# CLUSTER_FILE = '/home/mwarr/Data/DAPv1_clusters.txt'
+CLUSTER_FILE = None
+
+
 def find_dict_len(dict) :
     sum = 0
     for k, v in dict.items() :
@@ -20,8 +26,18 @@ def find_dict_len(dict) :
     print(sum)
 
 def get_motif_loc_dict(data_dir) :
+    # If we have a cluster file, convert to that instead
+    if CLUSTER_FILE != None :
+        cluster_dict = {}
+        with open(CLUSTER_FILE, 'r') as cf :
+            for line in cf :
+                cluster_dict[line.split('\t')[0]] = line.split('\t')[1].rstrip()
+
     # Holds where each motif is located {chr: {MOTIF: [loc, loc, ...], MOTIF:[loc, ..., loc]}}
     motif_loc_dict = defaultdict(lambda: defaultdict(set))
+
+    # Holds where each motif is located {(chr, motif, start) : end}
+    motif_end_dict = {}
 
     print("Filling Motif Dict")
 
@@ -40,22 +56,30 @@ def get_motif_loc_dict(data_dir) :
                 if len(line_arr) < 5: 
                     break
 
-                motif_loc_dict[line_arr[2]][line_arr[0]].add(int(line_arr[3]))
+                motif = line_arr[0]
+                if CLUSTER_FILE != None :
+                    motif = cluster_dict[motif]
+                motif_loc_dict[line_arr[2]][motif].add(int(line_arr[3]))
+                motif_end_dict[(line_arr[2], motif, int(line_arr[3]))] = int(line_arr[4])
 
     # Turn them to lists
     for chr, single_chr_dict in motif_loc_dict.items() :
         for motif, loc_list in single_chr_dict.items() :
             single_chr_dict[motif] = list(loc_list)
 
+    print("Removing Duplicates")
+
     # find_dict_len(motif_loc_dict)
     # Remove duplicates from repeated sequences (basically remove overlaps)
     for chr, single_chr_dict in motif_loc_dict.items() :
         for motif, loc_list in single_chr_dict.items() :
-            motif_len = len(motif)
+
 
             loc_list.sort()
             to_remove = set()
             for i in range(len(loc_list) - 1) :
+                motif_len = motif_end_dict[(chr, motif, loc_list[i])] - loc_list[i]
+
                 if loc_list[i + 1] - loc_list[i] <= motif_len :
                     to_remove.add(loc_list[i])
             single_chr_dict[motif] = sorted([x for x in loc_list if x not in to_remove])
@@ -66,7 +90,7 @@ def get_motif_loc_dict(data_dir) :
 
     # print(motif_loc_dict.keys())
     
-    return motif_loc_dict
+    return motif_loc_dict, motif_end_dict
 
 def merge_dict_lists(list_dict):
     heap = []
@@ -88,7 +112,7 @@ def merge_dict_lists(list_dict):
 
     return result
 
-def print_sequences(motif_loc_dict, output_dir) :
+def print_sequences(motif_loc_dict, motif_end_dict, output_dir) :
     for chr, single_chr_dict in motif_loc_dict.items() :
         with open(f"{output_dir}/{chr}", 'w') as out :
             result_list = merge_dict_lists(single_chr_dict)
@@ -97,9 +121,9 @@ def print_sequences(motif_loc_dict, output_dir) :
                 # IF we need to add a break
                 if motif_loc_pair[0] - previous >= BREAK_LENGTH :
                     out.write("BREAK\n")
-                out.write(f'{motif_loc_pair[1]}\t{motif_loc_pair[0]}\n')
+                out.write(f'{motif_loc_pair[1]}\t{motif_loc_pair[0]}\t{motif_end_dict[(chr, motif_loc_pair[1], motif_loc_pair[0])]}\n')
                 previous = motif_loc_pair[0]
 
 
-motif_loc_dict = get_motif_loc_dict('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_ArabidopsisDAPv1/')
-print_sequences(motif_loc_dict, '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/ArabidopsisDAPv1_fimo/')
+motif_loc_dict, motif_end_dict = get_motif_loc_dict('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_whole_genome_results/fimo_full_xstreme/')
+print_sequences(motif_loc_dict, motif_end_dict, '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_inputs/XSTREME')

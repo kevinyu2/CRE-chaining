@@ -16,7 +16,7 @@ from multiprocessing import Pool, cpu_count
 KMER_SIZE = 4
 
 # ACR set to consider. If all, set to None
-ACR_SET = '/home/mwarr/Data/seta.txt'
+ACR_SET = '/home/mwarr/Data/seta_half.txt'
 # ACR_SET = None
 
 # Ignore BREAK motifs
@@ -60,6 +60,9 @@ def parse_input(input_folder) :
     # {chromosome: [motif, motif, ..., motif]}
     motif_lists = defaultdict(list)
 
+    # {(chromosome, index): end}
+    end_dict = {}
+
     # Remove if still exists
     try:
         shm = shared_memory.SharedMemory(name='motif')
@@ -96,6 +99,8 @@ def parse_input(input_folder) :
                         # fill in motif_list
                         motif_lists[chromosome].append(line_arr[0])
 
+                        end_dict[(chromosome, motif_count)] = int(line_arr[2])
+
                         motif_count += 1
 
     # Convert to ints
@@ -123,7 +128,7 @@ def parse_input(input_folder) :
             kmer_dict[kmer].append((chr, idx))
 
 
-    return kmer_dict, location_dict, motif_lists, motif_to_int, int_to_motif
+    return kmer_dict, location_dict, motif_lists, motif_to_int, int_to_motif, end_dict
 
 # Turn into global array
 # Returns mappings from motif to int, int to motif, and a place where all the motifs are
@@ -187,7 +192,7 @@ def chunkify(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def find_matches(motif_lists, acr_file, outfile, kmer_dict, motif_array_locs, motif_array_size, location_dict, motif_to_int) :
+def find_matches(motif_lists, acr_file, outfile, kmer_dict, motif_array_locs, motif_array_size, location_dict, motif_to_int, end_dict) :
     print("Parsing ACR File")
 
     # If restricting by set
@@ -283,7 +288,7 @@ def find_matches(motif_lists, acr_file, outfile, kmer_dict, motif_array_locs, mo
                 for lines in tqdm(pool.imap_unordered(batched_worker, final_inputs), total=len(final_inputs)):
                     for line in lines :
                         acr, local_score, chr, start, stop, local_start, local_stop = line
-                        out.write(f"{acr}\t{local_score}\t{chr}\t{location_dict[(chr, start + local_start - motif_array_locs[chr][0])]}\t{location_dict[(chr, start + local_stop - motif_array_locs[chr][0])]}\n")
+                        out.write(f"{acr}\t{local_score}\t{chr}\t{location_dict[(chr, start + local_start - motif_array_locs[chr][0])]}\t{end_dict[(chr, start + local_stop - motif_array_locs[chr][0])]}\n")
             finally :
                 pool.close()
                 pool.join()
@@ -344,9 +349,9 @@ def local_align(list_seq, list_acr) :
 # Drivers
 
 def run_all(input_folder, acr_file, outfile) :
-    kmer_dict, location_dict, motif_lists, motif_to_int, int_to_motif = parse_input(input_folder)
+    kmer_dict, location_dict, motif_lists, motif_to_int, int_to_motif, end_dict = parse_input(input_folder)
     motif_array_size, motif_array_locs = init_global_motif(motif_lists)
-    find_matches(motif_lists, acr_file, outfile, kmer_dict, motif_array_locs, motif_array_size, location_dict, motif_to_int)
+    find_matches(motif_lists, acr_file, outfile, kmer_dict, motif_array_locs, motif_array_size, location_dict, motif_to_int, end_dict)
     cleanup_global_arrays()
 
 ################################################################################
@@ -358,9 +363,9 @@ def run_all(input_folder, acr_file, outfile) :
 #         '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/hits_511_w2_all.tsv')
 
 
-run_all('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/ArabidopsisPBM_20140210_fimo',
-        '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/acr_motif_sequences_ArabidopsisPBM_20140210.txt',
-        '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/fimo_full_genome/hits_ArabidopsisPBM.tsv')
+run_all('/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_inputs/DAPv1_e5',
+        '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_inputs/acrDAPv1_e5.txt',
+        '/home/projects/msu_nsf_pangenomics/pgrp/dACRxgenomes/one_genome/post_fimo/BLAST_hits/hits_DAPv1_e5.tsv')
 
 # find_matches('/home/kyu/test_blast/test_acr.txt', '/home/kyu/test_blast/test_out.tsv', kmer_dict, location_dict, motif_lists)
 
