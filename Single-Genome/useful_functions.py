@@ -45,6 +45,12 @@ def get_length(item):
     length = abs(end - start) + 1
     return length
 
+def get_frequencies(lst):
+    count_dict = {}
+    for item in lst:
+        count_dict[item] = count_dict.get(item, 0) + 1
+    return count_dict
+
 def output_freq_to_file(filename, freq_dict):
     with open(filename, "w") as file:
         for val, freq in freq_dict.items():

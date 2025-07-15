@@ -2,6 +2,7 @@ import random
 import sys
 from rand_vs_acr import *
 from alignment_rand_vs_acr import *
+from score_with_align import *
 sys.path.append("./Additional_Files/")
 from chain_features import *
 import os
@@ -212,8 +213,28 @@ def get_feature_combine_test():
         print(test_dict)
         raise
 
-for i in range(100):
-    get_feature_combine_test()
+
+'''
+Score_with_align.py test
+'''
+def chain_align_file(length, file_chain, file_align):
+    with open(file_chain, "w") as chaining:
+        with open(file_align, "w") as align:
+            region1 = random_ACR_name()
+            region2 = random_ACR_name()
+            chaining.write(f"{region1}\t{region2}\t{1}\n")
+            align.write(f"{region1}\t{region2}\t{10}\n")
+            for i in range(length):
+                region1 = random_ACR_name()
+                region2 = random_ACR_name()
+                chaining.write(f"{region1}\t{region2}\t{random.randint(1, 10)}\n")
+                align.write(f"{region1}\t{region2}\t{random.randint(1, 10)}\n")
+
+if __name__ == "__main__":
+    chain_align_file(100, "chain_test.tsv", "align_test.tsv")
+    align_chain_scores("align_test.tsv", "chain_test.tsv", "test.out", .5)
+
+        
 
 
 

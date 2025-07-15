@@ -32,7 +32,7 @@ Non_ref_num is the number of non-reference and random regions there should be.
 To restrict the dictionaries to only ACRs of a certain length, pass in parameters for low (lower bound
 on the length) and high (upper bound on the length)
 '''
-def create_dicts(chaining_file, reference_set, non_ref_num, low=None, high=None):
+def create_dicts(chaining_file, reference_set, non_ref_num, low=None, high=None, align_dict=None, thresh=None):
     #For every non-reference ACR, this dictionary contains a list of scores of that ACR
     #chained with every reference ACR
     ACR_dict = defaultdict(list)
@@ -45,9 +45,17 @@ def create_dicts(chaining_file, reference_set, non_ref_num, low=None, high=None)
             line_arr = line.split("\t")
             if len(line_arr) < 3:
                 continue
-            item1 = line_arr[0]
-            item2 = line_arr[1]
+            item1 = min(line_arr[0], line_arr[1])
+            item2 = max(line_arr[0], line_arr[1])
             score = float(line_arr[2])
+
+            #Skip if alignment score is too high
+            try:
+                if align_dict != None and align_dict[(item1, item2)] > thresh:
+                    continue
+            except KeyError:
+                print("Is the pair in backwards?:", (item2, item1) in align_dict)
+                raise
 
             if low != None: 
                 len1 = get_length(item1)
@@ -228,6 +236,9 @@ def create_average_subgraphs(input_dir_base):
     fig.suptitle("Comparison of Alignment Score Averages")
     plt.savefig("/home/mwarr/averages_alignment.png")
 
+'''
+Creates a bar graph of the average top scores
+'''
 def average_graph_top(input_dir_base, top_num):
     acr_data = []
     rand_data = []
@@ -255,14 +266,48 @@ def average_graph_top(input_dir_base, top_num):
     plt.savefig("/home/mwarr/align_exp2_loc_original.png")
 
 '''
+Takes in the dictionary of ACR scores and random region scores. Outputs the max and min
+values over both dictionaries.
+'''
+def get_max_min(ACR_dict, rand_dict):
+    max = None
+    min = None
+    for lst in ACR_dict.values():
+        for num in lst:
+            if max == None or num > max:
+                max = num
+            if min == None or num < min:
+                min = num
+    for lst in rand_dict.values():
+        for num in lst:
+            if num > max:
+                max = num
+            if num < min:
+                min = num
+    return {"max": max, "min": min}
+
+'''
 Function to be passed into output_score_freq as <list_op>
 '''
-def top_avg(lst):
+def list_op_top_avg(lst):
     lst.sort(reverse=True)
     sum = 0
     for i in range(10):
         sum += lst[i]
     return sum / 10
+
+'''
+Function to create function to be passed into output_score_freq
+'''
+def list_op_top_norm(max, min, num):
+    '''
+    Finds the <num>th largest value in the list and returns the value normalized by the
+    range of possible values.
+    '''
+    def top_norm(lst):
+        value = float(sorted(lst)[-(num)])
+        return (value - min) / (max - min)
+    return top_norm
 
 def driver_all_summary():
     # ref_set = create_ref_set("/home/mwarr/Data/seta.txt")
@@ -292,24 +337,22 @@ def driver_filter_summary():
         create_histograms(f"{dir}/ACR_vs_ACR_max_freq.tsv", f"{dir}/rand_vs_ACR_max_freq.tsv", f"Highest Local Chaining Score Lengths {i}-{i+100}", "Max Score")
         print(f"Finished {i}-{i+100} in {time.time() - start_time} seconds", flush=True)
 
-def driver_all_top():
+def driver_all_top(frac, type_short):
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
-    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/alignment_top5_local.tsv", ref_set, 3130)
-    print(f"Non reference ACRs: {len(dicts[0])}")
-    print(f"Random regions: {len(dicts[1])}")
-    base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/local_freq"
+    dicts = create_dicts(f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/align-{frac}_chain_{type_short}_scores.tsv", ref_set, 3130)
+    out_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/{type_short}_freq_{frac}"
     for i in range(1, 6):
-        output_score_freq(dicts[0], dicts[1], base_dir, lambda lst: sorted(lst)[-(i)], f"{i}-highest")
-        
-    # for i in range(1, 6):
-    #     create_histograms(f"{base_dir}/ACR_vs_ACR_{i}-highest_freq.tsv", f"{base_dir}/rand_vs_ACR_{i}-highest_freq.tsv", f"{i}-highest Local", 
-    #                  f"{i}-highest Chaining Score", 100)
-        
-    # output_score_freq(dicts[0], dicts[1], base_dir, top_avg, f"top-5-avg")
-    average_graph_top("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/local_freq", 5)
-    # create_histograms(f"{base_dir}/ACR_vs_ACR_top-10-avg_freq.tsv", f"{base_dir}/rand_vs_ACR_top-5-avg_freq.tsv", f"Top 10 Averaged Chaining Score Frequencies Global", 
-    #                  "Average Over Top 10 Chaining Scores", 100)
+        output_score_freq(dicts[0], dicts[1], out_dir, lambda lst: sorted(lst)[-(i)], f"score_{i}-highest")
 
+def driver_top_normal():
+    ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
+    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/global/alignment_90-10_glob.tsv", ref_set, 3130)
+    out_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/global/freq"
+    max_min = get_max_min(dicts[0], dicts[1])
+    for i in range(1, 6):
+        output_score_freq(dicts[0], dicts[1], out_dir, list_op_top_norm(max_min["max"], max_min["min"], i), f"score_{i}-highest")
 
 if __name__ == "__main__":
-    driver_all_top()
+    for frac in [.25, .5, .75]:
+        driver_all_top(frac, "loc")
+        driver_all_top(frac, "glob")

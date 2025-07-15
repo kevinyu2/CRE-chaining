@@ -26,7 +26,7 @@ Generates the box plot and saves it to /home/mwarr/{filename}
 '''
 def create_box_plot(data, xlabels, title, xtitle, ytitle, filename, colors=None):
     plt.figure(figsize=(15, 8))
-    bplot = plt.boxplot(data, labels=xlabels, sym="o", patch_artist=True, 
+    bplot = plt.boxplot(data, labels=xlabels, sym="", patch_artist=True, 
                         whiskerprops=dict(linewidth=2), medianprops=dict(linewidth=2, color="red"),
                         boxprops=dict(linewidth=2), capprops=dict(linewidth=2))
     color_rand = (random.random(), random.random(), random.random())
@@ -76,60 +76,62 @@ def fixed_chain_all(base_dir, op, title, xtitle, ytitle, filename, max_value=Non
     create_box_plot(data, labels, title, xtitle, ytitle, filename)
 
 def driver_counts():
-    base_dir = "/home/mwarr/Data/One_Genome/other_features_glob/counts"
+    base_dir = "/home/mwarr/Data/One_Genome/other_features/local/counts"
     op = "count"
-    title = "Distribution of the Number of Top Scores, Global"
+    title = "Distribution of the Number of Top Scores, Local"
     xtitle = "Score Category and Region Type"
     ytitle = "Number of Top Scores"
-    filename = "box_counts_glob.png"
+    filename = "box_counts_loc.png"
     top_5_all(base_dir, op, title, xtitle, ytitle, filename)
 
-def driver_scores():
-    base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/loc_freq"
+def driver_scores(type, type_short, frac):
+    base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/{type_short}_freq_{frac}"
     op = "score"
-    title = "Distribution of Top Scores, Local"
+    title = f"Distribution of Top Scores (with Alignment), Alignment {frac * 100}%, {type}"
     xtitle = "Score Category and Region Type"
     ytitle = "Score"
-    filename = "box_scores_loc.png"
+    filename = f"box_align_chain_scores_{frac}_{type_short}.png"
     top_5_all(base_dir, op, title, xtitle, ytitle, filename)
 
 def driver_anchor_num():
-    base_dir = "/home/mwarr/Data/One_Genome/other_features_glob/anchor_num"
+    base_dir = "/home/mwarr/Data/One_Genome/other_features/local/anchor_num"
     op = "anchor_num"
     title = "Distribution of Number of Anchors for a 5th-Highest Chain Length"
     xtitle = "5th-Highest Chain Length"
     ytitle = "Number of Anchors"
-    filename = "box_anchor_num_glob.png"
+    filename = "box_anchor_num_loc.png"
     fixed_chain_all(base_dir, op, title, xtitle, ytitle, filename)
 
 def driver_ref_len():
-    base_dir = "/home/mwarr/Data/One_Genome/other_features_glob/ref_len"
+    base_dir = "/home/mwarr/Data/One_Genome/other_features/local/ref_len"
     op = "ref_len"
     title = "Distribution of the Reference Region Length of the 5th-Highest Chain Score"
     xtitle = "5th-Highest Chain Score"
     ytitle = "Reference Region Length"
-    filename = "box_ref_len_glob.png"
+    filename = "box_ref_len_loc.png"
     fixed_chain_all(base_dir, op, title, xtitle, ytitle, filename)
 
-def driver_combine_score():
+def driver_combine_score(frac):
     data = []
-    base_dir = "/home/mwarr/Data/One_Genome/other_features_glob/combine_score"
+    base_dir = f"/home/mwarr/Data/One_Genome/other_features/local/combine_score/chain_{frac}"
     data.append(format_data(f"{base_dir}/ACR_vs_ACR_combine_freq.tsv"))
     data.append(format_data(f"{base_dir}/rand_vs_ACR_combine_freq.tsv"))
     labels = ["ACR", "Random"]
-    #create_box_plot(data, labels, "Distribution of Combined Score, Global", "Type of Region", "Score", "box_combined_glob.png")
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True, sharex=True)
-    axes[0].hist(data[0], bins=100)
-    axes[0].set_title("ACRs chained with ACRs")
-    axes[0].set_ylabel("Frequency")
+    create_box_plot(data, labels, "Distribution of Combined Score, Local", "Type of Region", "Score", f"box_combined_{frac}_loc.png")
+    # fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True, sharex=True)
+    # axes[0].hist(data[0], bins=100)
+    # axes[0].set_title("ACRs chained with ACRs")
+    # axes[0].set_ylabel("Frequency")
     
-    axes[1].hist(data[1], bins=100)
-    axes[1].set_title("ACRs chained with random regions")
-    axes[1].set_ylabel("Frequency")
+    # axes[1].hist(data[1], bins=100)
+    # axes[1].set_title("ACRs chained with random regions")
+    # axes[1].set_ylabel("Frequency")
 
-    plt.suptitle("Combined Score Frequencies, Global")
-    plt.tight_layout()
-    plt.savefig("/home/mwarr/combined_freq_glob.png")
+    # plt.suptitle("Combined Score Frequencies, Global")
+    # plt.tight_layout()
+    # plt.savefig("/home/mwarr/combined_freq_glob.png")
 
 if __name__ == "__main__":
-    driver_scores()
+    for frac in [.25, .5, .75]:
+        driver_scores("local", "loc", frac)
+        driver_scores("global", "glob", frac)

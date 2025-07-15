@@ -1,0 +1,5 @@
+Scoring used:
+25% 5th highest chain length; higher=better
+25% Number of anchors; lower=better
+25% Number of 5th highest chain lengths; lower=better
+25% Reference region length; lower=better
