@@ -218,21 +218,67 @@ def get_feature_combine_test():
 Score_with_align.py test
 '''
 def chain_align_file(length, file_chain, file_align):
+    ref_set = set()
     with open(file_chain, "w") as chaining:
         with open(file_align, "w") as align:
             region1 = random_ACR_name()
+            ref_set.add(region1)
             region2 = random_ACR_name()
             chaining.write(f"{region1}\t{region2}\t{1}\n")
             align.write(f"{region1}\t{region2}\t{10}\n")
-            for i in range(length):
+            for i in range(length - 1):
                 region1 = random_ACR_name()
                 region2 = random_ACR_name()
+                ref_set.add(region2)
                 chaining.write(f"{region1}\t{region2}\t{random.randint(1, 10)}\n")
                 align.write(f"{region1}\t{region2}\t{random.randint(1, 10)}\n")
+    return ref_set
+
+def create_score_dict_test():
+    chain_align_file(100, "chain_test.tsv", "align_test.tsv")
+    align_dict = {}
+    min_val, max_val = create_score_dict(align_dict, "align_test.tsv")
+    assert(min_val == 1)
+    assert(max_val == 10)
+    with open("align_test.tsv") as file:
+        for line in file:
+            line_arr = line.split("\t")
+            reg1 = min(line_arr[0], line_arr[1])
+            reg2 = max(line_arr[0], line_arr[1])
+            assert((reg1, reg2) in align_dict)
+            assert(align_dict[(reg1, reg2)] == float(line_arr[2]))
+
+def score_dict_real_data():
+    align_file = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/global/alignment_90-10_glob.tsv"
+    align_dict = {}
+    min_align, max_align = create_score_dict(align_dict, align_file)
+    print(len(align_dict))
+    with open(align_file) as file:
+        for line in file:
+            line_arr = line.split("\t")
+            reg1 = min(line_arr[0], line_arr[1])
+            reg2 = max(line_arr[0], line_arr[1])
+            if (reg1, reg2) not in align_dict:
+                print(f"'{reg1}' '{reg2}' not in dict")
+            if align_dict[(reg1, reg2)] != float(line_arr[2]):
+                print(f"'{reg1}' '{reg2}' have score {align_dict[(reg1, reg2)]} in the dict and"
+                      +f"score {float(line_arr[2])} in the file.")
+
+def exclude_high_align_test():
+    ref_set = chain_align_file(100, "chain_test.tsv", "align_test.tsv")
+    dicts = exclude_high_align("align_test.tsv", "chain_test.tsv", ref_set, .88)
+    count = 0
+    for lst in dicts[0].values():
+        for item in lst:
+            if item != 0:
+                count += 1
+    print(count) #should be around 80 
+
+
+
 
 if __name__ == "__main__":
-    chain_align_file(100, "chain_test.tsv", "align_test.tsv")
-    align_chain_scores("align_test.tsv", "chain_test.tsv", "test.out", .5)
+    exclude_high_align_test()
 
         
 

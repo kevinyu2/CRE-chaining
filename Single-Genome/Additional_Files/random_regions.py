@@ -96,12 +96,18 @@ def random_region_match_sizes(genome_file, reference_file, output_file):
     #plt.hist(sizes, bins=1000)
     #plt.savefig("/home/mwarr/ref_sizes.png")
 
+'''
+Takes in a fasta file and creates a text file where each line is the name of a 
+region in the fasta file
+'''
+def make_random_list(input_fa, output_file):
+    with open(input_fa) as input:
+        with open(output_file, "w") as output:
+            for line in input:
+                if line[0] == ">":
+                    output.write(f"{line[1:].strip()}\n")
 
 
 if __name__ == "__main__":
-    genome_file = "/home/mwarr/Data/One_Genome/random_regions/tair10.fa"
-    output_file = "/home/mwarr/Data/One_Genome/random_regions/setb_10_match_sizes.fa"
-    size_file = "/home/mwarr/Data/One_Genome/experiment2_10-90/setb_10.txt"
-
-    random_region_match_sizes(genome_file, size_file, output_file)
+    make_random_list("/home/mwarr/Data/One_Genome/random_regions/setb_10_match_sizes.fa", "/home/mwarr/Data/One_Genome/random_regions/setb_rand.txt")
 

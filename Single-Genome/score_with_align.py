@@ -92,11 +92,10 @@ def exclude_high_align_driver(type, type_short, thresh):
     dicts = exclude_high_align(f"{base_dir}/alignment/{type}/alignment_90-10_{type_short}.tsv", f"{base_dir}/Chaining_one_acr_rand_10-90_{type_short}.tsv", ref_set, thresh)
     for i in range(1, 6):
         lst_op = lambda lst: sorted(lst)[-i]
-        output_score_freq(dicts[0], dicts[1], f"{base_dir}/chain_and_align/exclude_high_align", lst_op, f"exclude_{thresh}")
+        output_score_freq(dicts[0], dicts[1], f"{base_dir}/chain_and_align/exclude_high_{type_short}", lst_op, f"exclude_{thresh}_{i}-highest")
 
 if __name__ == "__main__":
-    exclude_high_align_driver("global", "glob", .05)
-    exclude_high_align_driver("local", "loc", .05)
+    exclude_high_align_driver("local", "loc", .03)
     # for frac in [.25, .5, .75]:
     #     align_chain_driver("global", "glob", frac)
     #     align_chain_driver("local", "loc", frac)

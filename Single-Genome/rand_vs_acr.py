@@ -50,12 +50,14 @@ def create_dicts(chaining_file, reference_set, non_ref_num, low=None, high=None,
             score = float(line_arr[2])
 
             #Skip if alignment score is too high
-            try:
-                if align_dict != None and align_dict[(item1, item2)] > thresh:
+            if align_dict != None:
+                try:
+                    if align_dict[(item1, item2)] > thresh:
+                        continue
+                except KeyError: 
+                #not in align_dict, so either both random, both reference, both non-ref,
+                #or one random and one non-ref
                     continue
-            except KeyError:
-                print("Is the pair in backwards?:", (item2, item1) in align_dict)
-                raise
 
             if low != None: 
                 len1 = get_length(item1)
