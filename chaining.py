@@ -267,9 +267,107 @@ def chain_local_np(mems_np, match, mismatch, gap):
     return max_col[0], int(max_col[1])
 
 
+def chain_np_weighted(mems_np):
+    mems_len = mems_np.shape[0]
+    if mems_len == 0:
+        return 0
+
+    # Sort mems by second value ascending, first value descending (tiebreak)
+    # mems_np[:,1] is second col, mems_np[:,0] is first col
+    order = np.lexsort((-mems_np[:,0], mems_np[:,1]))
+    sorted_mems = mems_np[order]
+
+    # Extract first values (a)
+    mems_a = sorted_mems[:, 0]
+
+    weights = sorted_mems[:, 2]
+
+    # Compute order with reverse tie-breaks
+    order_for_lis = argsort_reverse_ties_np(mems_a)
+
+    weights = sorted_mems[:, 2][order_for_lis]
+
+    # length of longest increasing subsequence
+    return weighted_LIS(order_for_lis, weights)
 
 
 
+class FenwickTree:
+    def __init__(self, size):
+        self.tree = [0] * (size + 2)
+
+    def update(self, i, value):
+        while i < len(self.tree):
+            self.tree[i] = max(self.tree[i], value)
+            i += i & -i
+
+    def query(self, i):
+        res = 0
+        while i > 0:
+            res = max(res, self.tree[i])
+            i -= i & -i
+        return res
+
+def weighted_LIS(A, W):
+    # Coordinate compression
+    sorted_unique = sorted(set(A))
+    comp = {v: i+1 for i, v in enumerate(sorted_unique)}  # 1-based for BIT
+    A_comp = [comp[x] for x in A]
+    
+    ft = FenwickTree(len(sorted_unique) + 2)
+    max_total_weight = 0
+    
+    for i in range(len(A)):
+        best_prev = ft.query(A_comp[i] - 1)  # max weight for values < A[i]
+        curr_weight = best_prev + W[i]
+        ft.update(A_comp[i], curr_weight)
+        max_total_weight = max(max_total_weight, curr_weight)
+    
+    return max_total_weight
+
+
+
+def chain_local_np_weighted(mems_np, mismatch, gap):
+    mems_len = mems_np.shape[0]
+    if mems_len == 0:
+        return 0, 0  # match score 0, length 0
+    
+    # Sort mems by second value ascending, first value descending (tiebreak)
+    order = np.lexsort((-mems_np[:, 0], mems_np[:, 1]))
+    sorted_mems = mems_np[order]
+    
+    # Extract first values (a)
+    mems_a = sorted_mems[:, 0]
+    
+    # Get order with reverse tie-break
+    order = argsort_reverse_ties_np(mems_a)
+
+    # basically a tuple, contains for each element (score, length)
+    score_list = np.zeros((mems_len, 2))
+
+    for mem_idx in order :
+        max_score = sorted_mems[mem_idx][2]
+        max_length = 1
+        for j in range(mem_idx) :
+            # Non empty
+            if score_list[j][0] != 0 :
+                # score is score + gap (start - start - end + end) + mismatch (min(start - start, end - end) - 1)
+                score_with_j = sorted_mems[mem_idx][2] + score_list[j][0] + gap * abs(sorted_mems[mem_idx][0] - sorted_mems[j][0] - sorted_mems[mem_idx][1] + sorted_mems[j][1]) + mismatch * (min(sorted_mems[mem_idx][0] - sorted_mems[j][0], sorted_mems[mem_idx][1] - sorted_mems[j][1]) - 1)
+                
+                # If we found a new best
+                if score_with_j >= max_score :
+                    max_score = score_with_j
+                    max_length = max(max_length, score_list[j][1] + 1)
+                
+        score_list[mem_idx][0] = max_score
+        score_list[mem_idx][1] = max_length
+    
+    # Get best score
+    max_score = np.max(score_list[:, 0])
+    rows_with_max_col0 = score_list[score_list[:, 0] == max_score]
+    max_col = rows_with_max_col0[np.argmax(rows_with_max_col0[:, 1])]
+
+    return max_col[0], int(max_col[1])
 
 
 
@@ -299,21 +397,34 @@ def chain_driver_np(mems_np, is_weighted):
     # Flip second coordinate
     negative_mems_np = mems_np.copy()
     negative_mems_np[:, 1] *= -1
-
-    return max(
-        chain_np(mems_np),
-        chain_np(negative_mems_np)
-    )
+    
+    if is_weighted :
+        return max(
+            chain_np_weighted(mems_np),
+            chain_np_weighted(negative_mems_np)
+        )
+    else :
+        return max(
+            chain_np(mems_np),
+            chain_np(negative_mems_np)
+        )
 
 def chain_local_driver_np(mems_np, match, mismatch, gap, is_weighted):
+    # if weighted, the match score is ignored
     # Flip second coordinate
     negative_mems_np = mems_np.copy()
     negative_mems_np[:, 1] *= -1
 
-    return max(
-        chain_local_np(mems_np, match, mismatch, gap),
-        chain_local_np(negative_mems_np, match, mismatch, gap)
-    )
+    if is_weighted :
+        return max(
+            chain_local_np_weighted(mems_np, mismatch, gap),
+            chain_local_np_weighted(negative_mems_np, mismatch, gap)
+        )
+    else :
+        return max(
+            chain_local_np(mems_np, match, mismatch, gap),
+            chain_local_np(negative_mems_np, match, mismatch, gap)
+        )
 
 
 
@@ -325,23 +436,10 @@ def chain_local_driver_np(mems_np, match, mismatch, gap, is_weighted):
 ##############################################################
 # Testing
 
-# def generate_mems_like(n=10, a_range=(0, 10), b_range=(0, 15), seed=None):
-#     if seed is not None:
-#         np.random.seed(seed)
+# mems = [(0,6,1.5), (2,5,1), (3, 4,3), (5,5,1)]
+# mems_np = np.array(mems, dtype=float)
+# print(chain_local_driver_np(mems_np, -5, -1, -1, True))
 
-#     a_vals = np.random.randint(*a_range, size=n)
-#     b_vals = np.random.randint(*b_range, size=n)
-#     mems = list(zip(a_vals, b_vals))
-
-#     return mems
-
-# for i in range(100) :
-#     mems = generate_mems_like(n=100, a_range=(0, 100), b_range=(0, 100), seed=42)
-#     mems_np = np.array(mems, dtype = np.int32)
-
-#     assert(chain_driver(mems, False) == chain_driver_np(mems_np, False))
-#     assert(chain_local_driver(mems, 4, -2, -1, False) == chain_local_driver_np(mems_np, 4, -2, -1, False))
-#     print(i)
 
 # mems = [(1,6), (2,5), (3, 4), (4, 3)]
 # mems_np = np.array(mems, dtype=np.int32)
@@ -378,3 +476,22 @@ def chain_local_driver_np(mems_np, match, mismatch, gap, is_weighted):
 # mems = [(1,3), (4,4), (5,3), (6,2)]
 # print(chain_driver(mems, False))
 # # == 3
+
+# def generate_mems_like(n=10, a_range=(0, 10), b_range=(0, 15), seed=None):
+#     if seed is not None:
+#         np.random.seed(seed)
+
+#     a_vals = np.random.randint(*a_range, size=n)
+#     b_vals = np.random.randint(*b_range, size=n)
+#     mems = list(zip(a_vals, b_vals))
+
+#     return mems
+
+# for i in range(100) :
+#     mems = generate_mems_like(n=100, a_range=(0, 100), b_range=(0, 100), seed=42)
+#     mems_np = np.array(mems, dtype = np.int32)
+
+#     assert(chain_driver(mems, False) == chain_driver_np(mems_np, False))
+#     assert(chain_local_driver(mems, 4, -2, -1, False) == chain_local_driver_np(mems_np, 4, -2, -1, False))
+#     print(i)
+
