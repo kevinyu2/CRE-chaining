@@ -1,4 +1,6 @@
 from matplotlib import pyplot as plt
+from matplotlib.patches import Patch
+import numpy as np
 import random
 
 '''
@@ -25,24 +27,38 @@ def format_data(input_file, ignore_zeros=True, max_value=None):
 Generates the box plot and saves it to /home/mwarr/{filename}
 '''
 def create_box_plot(data, xlabels, title, xtitle, ytitle, filename, ylim=None, colors=None):
-    plt.figure(figsize=(15, 8))
-    bplot = plt.boxplot(data, labels=xlabels, sym="", patch_artist=True, 
-                        whiskerprops=dict(linewidth=2), medianprops=dict(linewidth=2, color="red"),
-                        boxprops=dict(linewidth=2), capprops=dict(linewidth=2))
+    plt.figure(figsize=(16, 8))
+    bplot = plt.boxplot(data, positions=range(1, len(data) + 1), sym="", patch_artist=True, 
+                        whiskerprops=dict(linewidth=4), medianprops=dict(linewidth=4, color="#B0413E"),
+                        boxprops=dict(linewidth=4), capprops=dict(linewidth=4))
     color_rand = (random.random(), random.random(), random.random())
     for ind, box in enumerate(bplot["boxes"]):
         if colors == None:
             box.set_facecolor(color_rand)
             if ind % 2 == 1: #regenerate every 2 boxes
                 color_rand = (random.random(), random.random(), random.random())
+        elif colors == "two":
+            if ind % 2 == 0:
+                box.set_facecolor("#00529b")
+            else:
+                box.set_facecolor("#FFB302")
         else:
             box.set_facecolor(colors[ind // 2])
-    plt.title(title, fontweight='bold', pad=15)
-    plt.xlabel(xtitle, fontweight='bold', labelpad=15)
-    plt.ylabel(ytitle, fontweight='bold', labelpad=15)
+    plt.title(title, pad=15, fontsize=25)
+    plt.xlabel(xtitle, labelpad=20, fontsize=25)
+    plt.ylabel(ytitle, labelpad=15, fontsize=25)
+    if len(xlabels) == len(data):
+        xtick_pos = range(1, len(data) + 1)
+    else:
+        xtick_pos = np.linspace(1.5, len(data) - .5, num=int(len(data) / 2))
+        plt.legend(fontsize=25 , handles=[Patch(facecolor="#00529b", label="ACR"), Patch(facecolor="#FFB302", label="Random")])
+
+    plt.xticks(xtick_pos, xlabels, fontsize=25)
+    plt.yticks(fontsize=25)
     if ylim != None:
         plt.ylim(ylim[0], ylim[1])
-    plt.savefig(f"/home/mwarr/{filename}")
+    plt.tight_layout(pad=2)
+    plt.savefig(f"/home/mwarr/{filename}", dpi=300)
 
 '''
 Reads in the frequency files from <base_dir> which contain frequencies of some feature of
@@ -50,16 +66,19 @@ top 5 scores and generates a box plot.
 '''
 def top_5_all(base_dir, op, title, xtitle, ytitle, filename, max_value=None, ylim=None):
     data = []
-    labels = []
+    #labels = ["Max,\nACR", "Max,\nRandom", "2nd Highest,\nACR", "2nd Highest,\nRandom", "3rd Highest,\nACR", "3rd Highest,\nRandom"]
+    labels=[]
     for i in range(1, 6):
         acr_data = format_data(f"{base_dir}/ACR_vs_ACR_{op}_{i}-highest_freq.tsv", max_value)
         rand_data = format_data(f"{base_dir}/rand_vs_ACR_{op}_{i}-highest_freq.tsv", max_value)
         data.append(acr_data)
-        labels.append(f"{i}-highest, \nACR")
         data.append(rand_data)
-        labels.append(f"{i}-highest, \nrandom")
-    colors = ["yellow", "blue", "green", "pink", "purple"]
-    create_box_plot(data, labels, title, xtitle, ytitle, filename, colors=colors, ylim=ylim)
+        labels.append(f"Rank {i}")
+        # if i > 3:
+        #     labels.append(f"{i}th Highest,\nACR")
+        #     labels.append(f"{i}th Highest,\nrandom")
+    colors = ["#00529b", "#FFB302", "#B0413E", "#4B4B4B", "#629DB7"]
+    create_box_plot(data, labels, title, xtitle, ytitle, filename, colors="two", ylim=ylim)
 
 '''
 Reads in the frequency files from <base_dir> which contain the frequencies of some
@@ -136,13 +155,13 @@ def driver_single_compare(title):
     plt.savefig("/home/mwarr/freq_exclude_loc.png")
 
 if __name__ == "__main__":
-    base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/exclude_high_loc"
-    op = "exclude_0.03"
-    title = f"Distribution of Top Local Scores, Alignment above .03 Excluded"
-    xtitle = "Score Category and Region Type"
+    base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/glob_freq"
+    op = "score"
+    title = "Distribution of Top Global Chain Scores"
+    xtitle = "Score Rank and Region Type"
     ytitle = "Score"
-    filename = f"box_exclude_.03_loc.png"
-    top_5_all(base_dir, op, title, xtitle, ytitle, filename, ylim=(-3, 63))
+    filename = f"box_glob_poster_format.png"
+    top_5_all(base_dir, op, title, xtitle, ytitle, filename, ylim=(-10, 140))
     # ylim = [(.15, .45), (.3, .6), (.5, .8)]
     # for ind, frac in enumerate([.25, .5, .75]):
     #     driver_scores("local", "loc", frac, ylim=ylim[ind])

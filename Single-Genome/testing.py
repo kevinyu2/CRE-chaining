@@ -274,11 +274,26 @@ def exclude_high_align_test():
                 count += 1
     print(count) #should be around 80 
 
+'''
+Testing score_with_align finding the threshold to only include the bottom <percent> percent
+'''
 
+#This is the same function as in score_with_align, but slightly modified
+def exclude_high_align_threshold(align_dict, percent):
+    values_sorted = sorted(align_dict.values())
+    thresh_index = int(((percent / float(100)) * len(values_sorted)))
+    print(thresh_index)
+    threshold = values_sorted[thresh_index]
+    return threshold
 
+def test_threshold():
+    align_dict = {}
+    for i in range(100):
+        align_dict[(i, i+1)] = random.randint(0, 10)
+    return exclude_high_align_threshold(align_dict, 22.8)
 
 if __name__ == "__main__":
-    exclude_high_align_test()
+    print(test_threshold())
 
         
 

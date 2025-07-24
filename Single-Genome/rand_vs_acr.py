@@ -339,22 +339,21 @@ def driver_filter_summary():
         create_histograms(f"{dir}/ACR_vs_ACR_max_freq.tsv", f"{dir}/rand_vs_ACR_max_freq.tsv", f"Highest Local Chaining Score Lengths {i}-{i+100}", "Max Score")
         print(f"Finished {i}-{i+100} in {time.time() - start_time} seconds", flush=True)
 
-def driver_all_top(frac, type_short):
+def driver_top(type, type_short):
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
-    dicts = create_dicts(f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/align-{frac}_chain_{type_short}_scores.tsv", ref_set, 3130)
-    out_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/{type_short}_freq_{frac}"
+    dicts = create_dicts(f"/home/mwarr/Data/Chaining_rand_DAPv1_clustered_{type}.tsv", ref_set, 3130)
+    out_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/{type_short}_freq_weighted"
     for i in range(1, 6):
         output_score_freq(dicts[0], dicts[1], out_dir, lambda lst: sorted(lst)[-(i)], f"score_{i}-highest")
 
 def driver_top_normal():
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
-    dicts = create_dicts("/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/global/alignment_90-10_glob.tsv", ref_set, 3130)
-    out_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/global/freq"
+    dicts = create_dicts("/home/mwarr/Data/Chaining_rand_DAPv1_clustered_global.tsv", ref_set, 3130)
+    out_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90/glob_freq_weighted"
     max_min = get_max_min(dicts[0], dicts[1])
     for i in range(1, 6):
         output_score_freq(dicts[0], dicts[1], out_dir, list_op_top_norm(max_min["max"], max_min["min"], i), f"score_{i}-highest")
 
 if __name__ == "__main__":
-    for frac in [.25, .5, .75]:
-        driver_all_top(frac, "loc")
-        driver_all_top(frac, "glob")
+    driver_top("local", "loc")
+    driver_top("global", "glob")

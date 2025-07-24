@@ -70,14 +70,20 @@ def align_chain_scores(align_file, chain_file, output_file, align_frac):
 '''
 Creates a dictionary for ACR test regions and for random regions in the form:
 {region: [chain_score, chain_score, ...], ...}
-Excludes any chain scores where the normalized alignment score is above <thresh_frac>
+Only includes chaining scores in the bottom <percent> percent
 '''
-def exclude_high_align(align_file, chain_file, ref_set, thresh_frac):
+def exclude_high_align(align_file, chain_file, ref_set, percent):
     align_dict = {}
-    min_align, max_align = create_score_dict(align_dict, align_file)
-    thresh = (thresh_frac * (max_align - min_align)) + min_align # Turn normalized value back to regular value
-    return create_dicts(chain_file, ref_set, 3130, align_dict=align_dict, thresh=thresh)
+    create_score_dict(align_dict, align_file)
+    values_sorted = sorted(align_dict.values())
+    thresh_index = int(((percent / float(100)) * len(values_sorted)))
+    threshold = values_sorted[thresh_index]
+    return create_dicts(chain_file, ref_set, 3130, align_dict=align_dict, thresh=threshold)
 
+'''
+<type> should either be "global" or "local"
+<type_short> should either be "glob" or "loc"
+'''
 def align_chain_driver(type, type_short, align_frac):
     base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90"
     align_file = f"{base_dir}/alignment/{type}/alignment_90-10_{type_short}.tsv"
@@ -86,16 +92,38 @@ def align_chain_driver(type, type_short, align_frac):
 
     align_chain_scores(align_file, chain_file, output_file, align_frac)
 
-def exclude_high_align_driver(type, type_short, thresh):
+def exclude_high_align_driver(type, type_short, percent):
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
     base_dir = "/home/mwarr/Data/One_Genome/experiment2_10-90"
-    dicts = exclude_high_align(f"{base_dir}/alignment/{type}/alignment_90-10_{type_short}.tsv", f"{base_dir}/Chaining_one_acr_rand_10-90_{type_short}.tsv", ref_set, thresh)
+    dicts = exclude_high_align(f"{base_dir}/alignment/{type}/alignment_90-10_{type_short}.tsv", f"/home/mwarr/Data/Chaining_rand_DAPv1_clustered_{type}.tsv", ref_set, percent)
     for i in range(1, 6):
         lst_op = lambda lst: sorted(lst)[-i]
-        output_score_freq(dicts[0], dicts[1], f"{base_dir}/chain_and_align/exclude_high_{type_short}", lst_op, f"exclude_{thresh}_{i}-highest")
+        output_score_freq(dicts[0], dicts[1], f"{base_dir}/chain_and_align/weighted/{type_short}_freq", lst_op, f"exclude_{round(percent, 2)}%_{i}-highest")
+
+'''
+Takes in a normalized score i.e. (score - min) / (max - min) <score_norm>
+Outputs what fraction of the alignment scores have <score_norm> score or lower.
+'''
+def normalized_score_to_fraction(align_file, score_norm):
+    align_dict = {}
+    min_align, max_align = create_score_dict(align_dict, align_file)
+    values_sorted = sorted(align_dict.values())
+    thresh = (score_norm * (max_align - min_align)) + min_align # Turn normalized value back to regular value
+    index = 0
+    for ind, val in enumerate(values_sorted):
+        if val > thresh:
+            index = ind
+            break
+    print("thresh", thresh)
+    print("index+1", index + 1)
+    print("len_values", len(values_sorted))
+    return (index + 1) / float(len(values_sorted))
+
 
 if __name__ == "__main__":
-    exclude_high_align_driver("local", "loc", .03)
+    #align_file = "/home/mwarr/Data/One_Genome/experiment2_10-90/alignment/local/alignment_90-10_loc.tsv"
+    exclude_high_align_driver("global", "glob", 99.99371685225528)
+    exclude_high_align_driver("local", "loc", 99.99371685225528)
     # for frac in [.25, .5, .75]:
     #     align_chain_driver("global", "glob", frac)
     #     align_chain_driver("local", "loc", frac)
