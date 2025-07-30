@@ -1,10 +1,10 @@
 import random
 from collections import defaultdict
-from matplotlib import pyplot as plt #type:ignore
+from matplotlib import pyplot as plt
 from pathlib import Path
 import os
 import time
-import numpy as np #type:ignore
+import numpy as np
 from useful_functions import *
 
 

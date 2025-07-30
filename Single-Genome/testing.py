@@ -6,18 +6,23 @@ from score_with_align import *
 sys.path.append("./Additional_Files/")
 from chain_features import *
 import os
+from random_forest import *
 
 
 '''
 Testing rand_vs_acr.py
 '''
 
-def generate_ref_file(size):
-    with open("ref_set_test.txt", "w") as file:
+def generate_ref_file(size, random_prob=None, filename="ref_set_test.txt"):
+    with open(filename, "w") as file:
         for i in range(size):
             start = random.randint(1000, 3000)
             size = random.randint(500, 1500)
-            file.write(f"Chr{random.randint(1, 6)}_{start}to{start+size}\n")
+            line = f"Chr{random.randint(1, 6)}_{start}to{start+size}"
+            if random_prob != None and random.randint(1, 100) > (random_prob * 100):
+                file.write(f"{line}_rand\n")
+            else:
+                file.write(f"{line}\n")
 
 def generate_chaining_file(length, ref_set):
     ref_set = list(ref_set)
@@ -292,10 +297,65 @@ def test_threshold():
         align_dict[(i, i+1)] = random.randint(0, 10)
     return exclude_high_align_threshold(align_dict, 22.8)
 
+'''
+Testing random_forest.py
+'''
+
+def test_get_sets():
+    generate_ref_file(10, random_prob=.5, filename="acr_rand_test.txt")
+    train_set, test_set = get_region_sets("acr_rand_test.txt")
+    generate_ref_file(10, filename="rep_test.txt")
+    rep_lst, index_dict = rep_list("rep_test.txt")
+    test_list = [None for _ in range(len(rep_lst))]
+    for region, index in index_dict.items():
+        test_list[index] = region
+    try:
+        assert(rep_lst == test_list)
+    except:
+        print("Failed")
+        print("rep list:" , rep_lst)
+        print("test_list: ", test_list)
+    return train_set, test_set, rep_lst, index_dict
+
+def gen_chain_file(train_set, test_set, rep_set):
+    train_test_list = (list(train_set) + list(test_set))
+    random.shuffle(train_test_list)
+    
+    with open("chain_test.tsv", "w") as file:
+        for item in train_test_list:
+            for rep in rep_set:
+                if random.randint(0, 1):
+                    file.write(f"{item}\t{rep}\t{random.randint(5, 20)}\t{random.randint(5, 20)}\n")
+                else:
+                    file.write(f"{rep}\t{item}\t{random.randint(5, 20)}\t{random.randint(5, 20)}\n")
+
+def test_chain_dicts(train_dict, test_dict, train, test, rep):
+    try:
+        assert(set(train_dict.keys()) == train)
+    except:
+        print(train_dict.keys())
+        print(list(train))
+        raise
+    try:
+        assert(set(test_dict.keys()) == test)
+    except:
+        print(train_dict.keys())
+        print(list(train))
+        raise
+
+    for reg, lst in train_dict.items():
+        assert len(lst) == len(rep)
+    for lst in test_dict.values():
+        assert len(lst) == len(rep)
+
+
+
 if __name__ == "__main__":
-    print(test_threshold())
-
-        
-
-
-
+    train, test, rep, index_dict = test_get_sets()
+    gen_chain_file(train, test, rep)
+    train_dict, test_dict = get_chain_dicts("chain_test.tsv", train, test, rep, index_dict)
+    test_chain_dicts(train_dict, test_dict, train, test, rep)
+    predict, actual = train_predict(train_dict, test_dict)
+    print(predict)
+    print(actual)
+    print(compare_predict_and_actual(predict, actual))

@@ -6,36 +6,14 @@ from rand_vs_acr import *
 from collections import defaultdict
 
 '''
-A helper function. Takes in a multi-feature list (i.e. a list of tuples
-where the first item is the chain length, second item is the number of anchors, and third item
-is the length of the reference region.) 
-
-Outputs a dictionary indicating the 5th-longest chain length, the number of 5th-longest chain
-lengths, the minimum number of anchors between the non-ref region and a 5th-longest chain, and the 
-minimum ref-length between a non-ref region and a ref-region.
-'''
-def get_features_combine_score(lst):
-    chain_len_5 = sorted(lst)[-5][0]
-    lst_5th = [] #A list of all tuples where score is the 5th highest score
-    for item in lst:
-        if item[0] == chain_len_5:
-            lst_5th.append(item)
-    chain_num = len(lst_5th)
-    anchor_lst = [item[1] for item in lst_5th]
-    ref_len_lst = [item[2] for item in lst_5th]
-    anchor_num = min(anchor_lst)
-    ref_len_num = min(ref_len_lst)
-    return {"chain_len" : chain_len_5, "chain_num": chain_num, "anchor_num": anchor_num,
-            "ref_len_num": ref_len_num}
-
-'''
 Takes in a chaining file with all random regions and ACRs pairwise chained. Also takes in the
 set of "reference" ACRs, i.e the ACRs which should be chained against the random regions and other
 ACRs.
-Non_ref_num is the number of non-reference and random regions there should be.
 
-Returns two dictionaries with the number of anchors and reference ACR lengths
-(for exact contents and structure, see in-line comment)
+Returns two dictionaries with the chain scores, number of anchors, and reference ACR lengths
+(for exact contents and structure, see in-line comment). The dictionaries are returned as a tuple: 
+(ACR_dict, rand_dict), where ACR_dict has all the non-reference ACRs as keys, and rand_dict has
+all the random regions as keys.
 
 Note: Unlike the similar function in rand_vs_acr.py, this function does not account for chain
 lengths of 0
@@ -77,7 +55,30 @@ def create_dicts_mult_feat(chaining_file, reference_set):
     return(ACR_dict, rand_dict)
 
 '''
-Wrapper function to create function for output_score_freq.
+A helper function. Takes in a multi-feature list (i.e. a list of tuples
+where the first item is the chain length, second item is the number of anchors, and third item
+is the length of the reference region.) 
+
+Outputs a dictionary indicating the 5th-longest chain length, the number of 5th-longest chain
+lengths, the minimum number of anchors between the non-ref region and a 5th-longest chain, and the 
+minimum ref-length between a non-ref region and a ref-region.
+'''
+def get_features_combine_score(lst):
+    chain_len_5 = sorted(lst)[-5][0]
+    lst_5th = [] #A list of all tuples where score is the 5th highest score
+    for item in lst:
+        if item[0] == chain_len_5:
+            lst_5th.append(item)
+    chain_num = len(lst_5th)
+    anchor_lst = [item[1] for item in lst_5th]
+    ref_len_lst = [item[2] for item in lst_5th]
+    anchor_num = min(anchor_lst)
+    ref_len_num = min(ref_len_lst)
+    return {"chain_len" : chain_len_5, "chain_num": chain_num, "anchor_num": anchor_num,
+            "ref_len_num": ref_len_num}
+
+'''
+The following four functions are all wrapper functions to create a function for output_score_freq.
 '''
 def list_op_anchor(chain_score):
     '''
@@ -96,9 +97,6 @@ def list_op_anchor(chain_score):
         return 0
     return anchor_num
 
-'''
-Wrapper to create a function to be passed into output_score_freq.
-'''
 def list_op_len_ref(chain_score):
     '''
     Function to be passed into output_score_freq. Returns a list of all the reference region lengths
@@ -116,9 +114,6 @@ def list_op_len_ref(chain_score):
         return 0
     return len_ref
 
-'''
-Creates function to pass into output_score_freq.
-'''
 def list_op_count(num_highest):
     '''
     Function to pass into output_score_freq. Takes in a multi-feature list (i.e. a list of tuples
@@ -133,12 +128,9 @@ def list_op_count(num_highest):
     
     return list_count
 
-'''
-Wrapper function to create a function to pass into output_score_freq
-'''
 def list_op_combine(chain_max, chain_num_max, anchor_max, ref_num_max, chain_frac):
     '''
-    Outputs a score from the multi-feature list. The score is based on the maximums and
+    Outputs a score from the multi-feature list. The score is normalized based on the maximums and
     the <chain_frac>. <chain_frac> is the weight that the chain length is given. The remaining
     features are weighted evenly. The score is between 0 and 1.
     '''
@@ -157,7 +149,7 @@ def list_op_combine(chain_max, chain_num_max, anchor_max, ref_num_max, chain_fra
 '''
 Returns a dictionary indicating the max 5th-longest chain length, the max number of 5th-longest
 chain lengths, the max min number of anchors, and the max min ref-length. These numbers are used to
-create scores between 0 and 1 (a ratio between the number and the max number).
+create normalized scores between 0 and 1 (a ratio between the number and the max number).
 '''
 def get_max_dict(ACR_dict, rand_dict):
     max_dict = {"chain_len" : 0, "chain_num": 0, "anchor_num": 0, "ref_len_num": 0}
@@ -173,36 +165,25 @@ def get_max_dict(ACR_dict, rand_dict):
                 max_dict[feature] = val
     return max_dict
 
-def average_graph_constant_chain(input_dir_base, op_name, ylabel, title):
-    acr_data = []
-    rand_data = []
-    labels = [i for i in range(2, 20)]
-    for i in range(2, 20):
-        acr_data.append(get_average(f"{input_dir_base}/ACR_vs_ACR_{op_name}_{i}_freq.tsv", True))
-        rand_data.append(get_average(f"{input_dir_base}/rand_vs_ACR_{op_name}_{i}_freq.tsv", True))
-    width = .4
-    x = np.arange(len(labels))
-    plt.figure(figsize=(15, 6))
-    plt.bar(x - width / 2, acr_data, label="ACRs", width=width)
-    plt.bar(x + width / 2, rand_data, label="Random", width=width)
-    plt.xticks(x, labels)
-    plt.ylim(870, 890)
-    plt.title(title)
-    plt.xlabel("5th-Highest Chain Length")
-    plt.ylabel(ylabel)
-    plt.legend()
-    plt.savefig(f"/home/mwarr/chainging_exp2_{op_name}_glob_original.png")
-
+'''
+Driver for outputting the frequencies for all the different chain features.
+<base> is the base directory which contains subdirectories for the frequency files to
+be output to.
+<chain_path> is the path to the chaining file.
+'''
 def driver_frequencies_all(base, chain_path):
+
     ref_set = create_ref_set("/home/mwarr/Data/One_Genome/experiment2_10-90/seta_90.txt")
     dicts = create_dicts_mult_feat(chain_path, ref_set)
+
+    #output frequencies for number of top scores.
     for i in range(1, 6):
         output_score_freq(dicts[0], dicts[1], f"{base}/counts", list_op_count(i), f"count_{i}")
     
     #output frequencies for chain features with a fixed chain length
-    # for i in range(2, 20):
-    #     output_score_freq(dicts[0], dicts[1], f"{base}/anchor_num", list_op_anchor(i), f"anchor_num_{i}")
-    #     output_score_freq(dicts[0], dicts[1], f"{base}/ref_len", list_op_len_ref(i), f"ref_len_{i}")
+    for i in range(2, 20):
+        output_score_freq(dicts[0], dicts[1], f"{base}/anchor_num", list_op_anchor(i), f"anchor_num_{i}")
+        output_score_freq(dicts[0], dicts[1], f"{base}/ref_len", list_op_len_ref(i), f"ref_len_{i}")
     
     #output frequencies for combined score
     max_dict = get_max_dict(dicts[0], dicts[1])

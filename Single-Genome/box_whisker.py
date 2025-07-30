@@ -4,7 +4,19 @@ import numpy as np
 import random
 
 '''
-Takes in a frequency file and creates a list of all the values
+Generates box and whisker plots from frequency files. 
+
+Frequency file format:
+Each line should have the value, followed by a tab, followed
+by the frequency of that value.
+'''
+
+
+'''
+Helper function.
+Takes in a frequency file and creates a list of all the values. If ignore_zeros is True, zeros will not be included
+in the list. If max_value is True, any value greater than <max_value> will not be included
+in the list.
 '''
 def format_data(input_file, ignore_zeros=True, max_value=None):
     data = []
@@ -24,9 +36,17 @@ def format_data(input_file, ignore_zeros=True, max_value=None):
     return data
 
 '''
-Generates the box plot and saves it to /home/mwarr/{filename}
+Generates a box plot and saves it to <out_path>.
+
+<data> should be a list of lists, where each list contains the values in a distribution. One
+box will be created for each list.
+<xlabels> should be a list of labels for the x-ticks.
+<xtitle> and <ytitle> are the labels for the axes.
+<ylim> is the range of the y-axis (optional)
+<colors> should either be "two" (alternate blue and yellow) or a list of colors for pair of boxes.
+If colors is None, every pair of boxes will be a random color.
 '''
-def create_box_plot(data, xlabels, title, xtitle, ytitle, filename, ylim=None, colors=None):
+def create_box_plot(data, out_path, xlabels, title, xtitle, ytitle, ylim=None, colors=None):
     plt.figure(figsize=(16, 8))
     bplot = plt.boxplot(data, positions=range(1, len(data) + 1), sym="", patch_artist=True, 
                         whiskerprops=dict(linewidth=4), medianprops=dict(linewidth=4, color="#B0413E"),
@@ -58,11 +78,21 @@ def create_box_plot(data, xlabels, title, xtitle, ytitle, filename, ylim=None, c
     if ylim != None:
         plt.ylim(ylim[0], ylim[1])
     plt.tight_layout(pad=2)
-    plt.savefig(f"/home/mwarr/{filename}", dpi=300)
+    plt.savefig(out_path, dpi=300)
 
 '''
 Reads in the frequency files from <base_dir> which contain frequencies of some feature of
 top 5 scores and generates a box plot.
+
+There should be 10 files in <base_dir> in the following format:
+<base_dir>/<ACR|rand>_vs_ACR_<op>_<num>-highest_freq.tsv
+
+There should be 5 files with 'rand' and 'num'-highest score, where 'num' is between 1 and 5.
+There should be 5 files with 'ACR' and 'num'-highest score, where 'num' is between 1 and 5.
+
+<filename> is the output file name.
+
+<max-value> is the maximum value which should be included in the data (optional)
 '''
 def top_5_all(base_dir, op, title, xtitle, ytitle, filename, max_value=None, ylim=None):
     data = []
@@ -82,9 +112,20 @@ def top_5_all(base_dir, op, title, xtitle, ytitle, filename, max_value=None, yli
 
 '''
 Reads in the frequency files from <base_dir> which contain the frequencies of some
-feature given a chain length.
+feature with a fixed chain length and generates a box and whisker plot.
+
+There should be 2 files for 18 fixed chain lengths in <base_dir> in the following format:
+<base_dir>/<ACR|rand>_<op>_<chain-len>_freq.tsv
+
+One file should contain 'rand' and another should contain 'ACR'. Chain-len should range
+from 2-19.
+
+<filename> is the output file name.
+
+<max-value> is the maximum value which should be included in the data (optional)
 '''
 def fixed_chain_all(base_dir, op, title, xtitle, ytitle, filename, max_value=None):
+
     data = []
     labels = []
     for i in range(2, 20):
@@ -132,6 +173,8 @@ def driver_ref_len():
     filename = "box_ref_len_loc.png"
     fixed_chain_all(base_dir, op, title, xtitle, ytitle, filename)
 
+'''
+'''
 def driver_single_compare(title):
     data = []
     base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/exclude_high_glob"
@@ -155,13 +198,13 @@ def driver_single_compare(title):
     plt.savefig("/home/mwarr/freq_exclude_loc.png")
 
 if __name__ == "__main__":
-    base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/glob_freq"
-    op = "score"
-    title = "Distribution of Top Global Chain Scores"
+    base_dir = f"/home/mwarr/Data/One_Genome/experiment2_10-90/chain_and_align/weighted/glob_freq"
+    op = "exclude_99.99%"
+    title = "Distribution of Top Global Chain Scores, Weighted Scoring, High Alignment Excluded"
     xtitle = "Score Rank and Region Type"
     ytitle = "Score"
-    filename = f"box_glob_poster_format.png"
-    top_5_all(base_dir, op, title, xtitle, ytitle, filename, ylim=(-10, 140))
+    filename = f"box_weighted_exclude_glob.png"
+    top_5_all(base_dir, op, title, xtitle, ytitle, filename)
     # ylim = [(.15, .45), (.3, .6), (.5, .8)]
     # for ind, frac in enumerate([.25, .5, .75]):
     #     driver_scores("local", "loc", frac, ylim=ylim[ind])
