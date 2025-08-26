@@ -1,4 +1,15 @@
-from sklearn.tree import DecisionTreeClassifier #type: ignore
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier #type: ignore
+from sklearn.metrics import accuracy_score, f1_score #type: ignore
+from sklearn.neighbors import KNeighborsClassifier #type:ignore
+from sklearn.svm import LinearSVC #type:ignore
+from sklearn.gaussian_process import GaussianProcessClassifier #type:ignore
+from sklearn.tree import DecisionTreeClassifier #type:ignore
+from sklearn.neural_network import MLPClassifier #type:ignore
+from sklearn.naive_bayes import GaussianNB #type:ignore
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis #type:ignore
+from matplotlib import pyplot as plt #type:ignore
+
+
 import random
 from collections import defaultdict
 
@@ -85,8 +96,11 @@ from chaining with the representative regions
 <settings> should be a dictionary with arguments for RandomForestClassifier
 Outputs a tuple. The first value is a list with the predicted classes and the second value is a list
 of the actual classes. 0 indicates a random region and 1 indicates an ACR.
+
+A classifier may be passed in. This will default to RandomForestClassifier. If <classifier> is set
+to 'control', random predictions will be made.
 '''          
-def train_predict(train_dict, test_dict, fraction=.5, settings={}):
+def train_predict(train_dict, test_dict, fraction=.5, classifier=RandomForestClassifier()):
     feature_train = []
     labels_train = []
     for region, feature_list in train_dict.items():
@@ -113,16 +127,17 @@ def train_predict(train_dict, test_dict, fraction=.5, settings={}):
                 labels_test.append(1)
                 feature_test.append(feature_list)
                 acr_count += 1
-
-    classifier = DecisionTreeClassifier(**settings)
-    classifier.fit(feature_train, labels_train)
-    return classifier.predict(feature_test), labels_test
+    if classifier == "control":
+        return [random.randint(0, 1) for _ in range(len(labels_test))], labels_test
+    else:
+        classifier.fit(feature_train, labels_train)
+        return classifier.predict(feature_test), labels_test
 
 '''
 Calculates and returns a dictionary of true and false positives,
 as well as true and false negatives.
 '''
-def compare_predict_and_actual(predict_list, actual_list):
+def get_stats_for_eval(predict_list, actual_list):
     true_pos = 0
     false_pos = 0
     true_neg = 0
@@ -150,39 +165,101 @@ vectors consisting of chaining scores to some central ACRs, predicts the region 
 test_set, and then returns a dictionary of performance statistics, as well as a dictionary of control statistics
 (random predictions)
 '''
-def process(score_file, rep_list_file, fraction=.5):
-    rand_acr_file = "/home/mwarr/Data/One_Genome/exp3_randomforest/setb_and_rand_list.txt"
+def process(score_file, rep_list_file, fraction=.5, classifier=RandomForestClassifier()):
+    rand_acr_file = "/home/mwarr/Data/One_Genome/exp3_ml/setb_and_rand_list.txt"
     train_set, test_set = get_region_sets(rand_acr_file)
     rep_lst, index_dict = rep_list(rep_list_file)
     train_dict, test_dict = get_chain_dicts(score_file, train_set, test_set, rep_lst, index_dict)
-    predict, actual = train_predict(train_dict, test_dict, fraction=fraction)
-    predict_control = [random.randint(0, 1) for _ in range(len(actual))]
-    return compare_predict_and_actual(predict, actual), compare_predict_and_actual(predict_control, actual)
+    predict, actual = train_predict(train_dict, test_dict, fraction=fraction, classifier=classifier)
+    return predict, actual
 
 '''
-Driver for experiment where <fraction> of TEST regions are ACRs and <1-fraction> are not. Also runs a control by randomly predicting regions.
+Makes a Matplotlib heatmap with <table_data> and saves it to <output_file>
+'''
+def create_heatmap(table_data, xlabels, ylabels, output_file, title):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(10, 10)
+    ax.imshow(table_data)
+    ax.set_xticks(range(len(xlabels)), labels=xlabels, rotation=45)
+    ax.set_yticks(range(len(ylabels)), labels=ylabels)
+    ax.tick_params(axis='both', labelsize=15)
+    for i in range(len(xlabels)):
+        for j in range(len(ylabels)):
+            ax.text(i, j, table_data[j][i], fontsize=15, ha='center')
+
+    plt.title(title, fontsize=20)
+    plt.tight_layout()
+    plt.savefig(output_file)
+
+'''
+Driver for experiment where <fraction> of TEST regions are ACRs and <1-fraction> are not.
 Outputs results to <output_file> in the format:
 <type>
-actual <accuracy>
-control <accuracy
+actual <accuracy> <f1>
 '''
-def driver(output_file, fraction=.5):
-    base = "/home/mwarr/Data/One_Genome/exp3_randomforest"
+def driver_data_file(output_file, fraction=.5):
+    base = "/home/mwarr/Data/One_Genome/exp3_ml"
     score_files = ["Chaining_local_rep_weight.tsv", "Chaining_global_rep_weight.tsv", "Chaining_global_consensus.tsv", "Chaining_local_consensus.tsv"]
+    classifiers = [KNeighborsClassifier(), LinearSVC(), GaussianProcessClassifier(), RandomForestClassifier(), DecisionTreeClassifier(),
+                   AdaBoostClassifier(), MLPClassifier(), GaussianProcessClassifier(), GaussianNB(), QuadraticDiscriminantAnalysis(), "control"]
+    
     with open(output_file, "w") as file:
-        for score_file in score_files:
-            if "rep" in score_file:
-                stat_dict, stat_dict_control = process(f"{base}/{score_file}", f"{base}/seta_rep_clustered_loc_list.txt", fraction=fraction)
-            else:
-                stat_dict, stat_dict_control = process(f"{base}/{score_file}", f"{base}/seta_consensus_DAPv1_clustered_loc_list.txt", fraction=fraction)
-            
-            accuracy = (stat_dict["true_pos"] + stat_dict["true_neg"]) / (stat_dict["true_pos"] + stat_dict["true_neg"] + stat_dict["false_pos"] + stat_dict["false_neg"])
-            accuracy_ctrl = (stat_dict_control["true_pos"] + stat_dict_control["true_neg"]) / (stat_dict_control["true_pos"] + stat_dict_control["true_neg"] + stat_dict_control["false_pos"] + stat_dict_control["false_neg"])
-            file.write(f"{score_file[:-4]}\n")
-            file.write(f"actual {round(accuracy, 2)}\n")
-            file.write(str(stat_dict) + "\n")
-            file.write(f"control {round(accuracy_ctrl, 2)}\n")
-            file.write(str(stat_dict_control) + "\n")
+        for classifier in classifiers:
+            file.write(f"{str(classifier)}\n")
+            for score_file in score_files:
+                if "rep" in score_file:
+                    predict, actual = process(f"{base}/{score_file}", f"{base}/seta_rep_clustered_loc_list.txt", fraction=fraction, classifier=classifier)
+                else:
+                    predict, actual = process(f"{base}/{score_file}", f"{base}/seta_consensus_DAPv1_clustered_loc_list.txt", fraction=fraction, classifier=classifier)
+                
+                #get evaluation metrics
+                accuracy = accuracy_score(actual, predict)
+                f1 = f1_score(actual, predict)
+                
+                file.write(f"{score_file[:-4]}\n")
+                file.write(f"accuracy\t{round(accuracy, 2)}\tf1\t{round(f1, 2)}\n")
+                #file.write(f"{str(get_stats_for_eval(predict, actual))}\n")
+            file.write("\n\n")
 
+'''
+Driver for experiment where <fraction> of TEST regions are ACRs and <1-fraction> are not.
+Outputs 2 tables to <output_base> as .png files. One file has the accuracy scores, and the
+other has f1 scores.
+'''
+def driver_heatmap(input_file, output_base, fraction=.5):
+    table_f1 = []
+    table_acc = []
+
+    type = ["local rep", "global rep", "global consensus", "local consensus"]
+    algo = []
+    algo_count = 0
+    with open(input_file, "r") as file:
+        for line in file:
+            algo_line = line.strip()
+            if len(algo_line) < 2:
+                continue
+            if "control" in algo_line:
+                algo.append(algo_line)
+            else:
+                algo.append(algo_line[: -2])
+            row_f1 = []
+            row_acc = []
+            #for each type
+            for _ in range(4):
+                file.readline() #type line
+                scores = file.readline().split("\t")
+                acc = float(scores[1].strip())
+                f1 = float(scores[3].strip())
+                row_f1.append(f1)
+                row_acc.append(acc)
+            table_f1.append(row_f1)
+            table_acc.append(row_acc)
+            algo_count += 1
+
+    create_heatmap(table_f1, type, algo, f"{output_base}/f1_heat_{fraction}.png", f"F1 scores, {round(fraction, 2) *100}% ACRs")
+    create_heatmap(table_acc, type, algo, f"{output_base}/acc_heat_{fraction}.png", f"Accuracies, {round(fraction, 2) *100}% ACRs")
+    
+      
 if __name__ == "__main__":
-    driver("/home/mwarr/Data/One_Genome/exp3_randomforest/results/90-10_decision_tree.txt", fraction=.1)
+    #driver_data_file("/home/mwarr/Data/One_Genome/exp3_ml/results/90-10_algo_compare.txt", fraction=.1)
+    driver_heatmap("/home/mwarr/Data/One_Genome/exp3_ml/results/50-50_algo_compare.txt", "/home/mwarr/Data/One_Genome/exp3_ml/results", fraction=.5)
