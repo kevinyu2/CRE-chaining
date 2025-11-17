@@ -8,6 +8,7 @@ from sklearn.neural_network import MLPClassifier #type:ignore
 from sklearn.naive_bayes import GaussianNB #type:ignore
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis #type:ignore
 from matplotlib import pyplot as plt #type:ignore
+import numpy as np #type: ignore
 
 
 import random
@@ -176,18 +177,20 @@ def process(score_file, rep_list_file, fraction=.5, classifier=RandomForestClass
 '''
 Makes a Matplotlib heatmap with <table_data> and saves it to <output_file>
 '''
-def create_heatmap(table_data, xlabels, ylabels, output_file, title):
+def create_heatmap(table_data, xlabels, ylabels, output_file, title, xtitle, ytitle):
     fig, ax = plt.subplots()
-    fig.set_size_inches(10, 10)
-    ax.imshow(table_data)
+    fig.set_size_inches(12, 12)
+    ax.imshow(table_data, cmap='Greens', vmin=np.min(table_data), vmax=np.max(table_data) + .1)
     ax.set_xticks(range(len(xlabels)), labels=xlabels, rotation=45)
     ax.set_yticks(range(len(ylabels)), labels=ylabels)
-    ax.tick_params(axis='both', labelsize=15)
+    ax.tick_params(axis='both', labelsize=18)
     for i in range(len(xlabels)):
         for j in range(len(ylabels)):
-            ax.text(i, j, table_data[j][i], fontsize=15, ha='center')
+            ax.text(i, j, table_data[j][i], fontsize=18, ha='center')
 
-    plt.title(title, fontsize=20)
+    plt.title(title, fontsize=30, pad=20)
+    plt.xlabel(xtitle, fontsize=30)
+    plt.ylabel(ytitle, fontsize=30)
     plt.tight_layout()
     plt.savefig(output_file)
 
@@ -225,12 +228,13 @@ def driver_data_file(output_file, fraction=.5):
 Driver for experiment where <fraction> of TEST regions are ACRs and <1-fraction> are not.
 Outputs 2 tables to <output_base> as .png files. One file has the accuracy scores, and the
 other has f1 scores.
+If include-SVC is False, LinearSVC (which skews the heatmap) is not included in the heatmap.
 '''
-def driver_heatmap(input_file, output_base, fraction=.5):
+def driver_heatmap(input_file, output_base, fraction=.5, include_SVC=False):
     table_f1 = []
     table_acc = []
 
-    type = ["local rep", "global rep", "global consensus", "local consensus"]
+    type = ["Local Rep", "Global Rep", "Global Consensus", "Local Consensus"]
     algo = []
     algo_count = 0
     with open(input_file, "r") as file:
@@ -238,8 +242,12 @@ def driver_heatmap(input_file, output_base, fraction=.5):
             algo_line = line.strip()
             if len(algo_line) < 2:
                 continue
+            if "SVC" in algo_line and not include_SVC:
+                for _ in range(8):
+                    file.readline()
+                continue
             if "control" in algo_line:
-                algo.append(algo_line)
+                algo.append(algo_line.capitalize())
             else:
                 algo.append(algo_line[: -2])
             row_f1 = []
@@ -256,10 +264,11 @@ def driver_heatmap(input_file, output_base, fraction=.5):
             table_acc.append(row_acc)
             algo_count += 1
 
-    create_heatmap(table_f1, type, algo, f"{output_base}/f1_heat_{fraction}.png", f"F1 scores, {round(fraction, 2) *100}% ACRs")
-    create_heatmap(table_acc, type, algo, f"{output_base}/acc_heat_{fraction}.png", f"Accuracies, {round(fraction, 2) *100}% ACRs")
+    create_heatmap(table_f1, type, algo, f"{output_base}/f1_heat_{fraction}.png", f"F1 scores, {round(fraction, 2) *100}% ACRs", "Chain Type", "ML Algorithm")
+    create_heatmap(table_acc, type, algo, f"{output_base}/acc_heat_{fraction}.png", f"Accuracies, {round(fraction, 2) *100}% ACRs", "Chain Type", "ML Algorithm")
     
       
 if __name__ == "__main__":
     #driver_data_file("/home/mwarr/Data/One_Genome/exp3_ml/results/90-10_algo_compare.txt", fraction=.1)
+    driver_heatmap("/home/mwarr/Data/One_Genome/exp3_ml/results/90-10_algo_compare.txt", "/home/mwarr/Data/One_Genome/exp3_ml/results", fraction=.1)
     driver_heatmap("/home/mwarr/Data/One_Genome/exp3_ml/results/50-50_algo_compare.txt", "/home/mwarr/Data/One_Genome/exp3_ml/results", fraction=.5)
